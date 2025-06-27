@@ -12,7 +12,7 @@ export default defineConfig({
     outDir: path.resolve(__dirname, "./build"),
     emptyOutDir: true,
     rollupOptions: {
-      input: path.resolve(__dirname, "index.html"),
+      input: path.resolve(__dirname, "./src/index.html"),
       output: {
         entryFileNames: `main.js`,
         chunkFileNames: `chunks/[name].js`,

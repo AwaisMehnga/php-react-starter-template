@@ -1,4 +1,7 @@
 <?php
+// Bootstrap the application
+require_once __DIR__ . '/bootstrap.php';
+
 $dispatcher = require __DIR__ . '/routes.php';
 
 $httpMethod = $_SERVER['REQUEST_METHOD'];
@@ -24,18 +27,40 @@ switch ($routeInfo[0]) {
         break;
 
     case FastRoute\Dispatcher::FOUND:
-        $handler = $routeInfo[1];   // The file path to include
+        $handler = $routeInfo[1];   // The handler (controller@method or file path)
         $vars = $routeInfo[2];      // Associative array of route params
 
         // Extract route parameters as variables
         extract($vars);
 
-        // Include the handler file (view/controller)
-        if (file_exists(__DIR__ . '/' . $handler)) {
-            include __DIR__ . '/' . $handler;
+        // Check if handler is a controller@method or a direct file path
+        if (strpos($handler, '@') !== false) {
+            // Controller@method format
+            [$controllerName, $methodName] = explode('@', $handler, 2);
+
+            $controllerClass = "App\\Controllers\\{$controllerName}";
+
+            if (class_exists($controllerClass)) {
+                $controller = new $controllerClass();
+                if (method_exists($controller, $methodName)) {
+                    // Call the controller method with route parameters
+                    call_user_func_array([$controller, $methodName], array_values($vars));
+                } else {
+                    http_response_code(500);
+                    echo "Method {$methodName} not found in {$controllerClass}";
+                }
+            } else {
+                http_response_code(500);
+                echo "Controller {$controllerClass} not found";
+            }
         } else {
-            http_response_code(500);
-            echo "Handler file not found: " . htmlspecialchars($handler);
+            // Direct file include (legacy support)
+            if (file_exists(__DIR__ . '/' . $handler)) {
+                include __DIR__ . '/' . $handler;
+            } else {
+                http_response_code(500);
+                echo "Handler file not found: " . htmlspecialchars($handler);
+            }
         }
         break;
 }
