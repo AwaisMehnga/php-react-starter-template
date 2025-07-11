@@ -1,0 +1,1 @@
+import{j as s}from"../../client/chunks/client.js";function a({onClose:l}){return s.jsxs("div",{className:"modal",children:[s.jsx("h2",{children:"This is a lazy-loaded modal!"}),s.jsx("button",{onClick:l,children:"Close"})]})}export{a as default};

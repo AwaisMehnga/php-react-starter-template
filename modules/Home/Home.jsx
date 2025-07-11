@@ -3,7 +3,7 @@ import "./App.css";
 
 const Modal = lazy(() => import("./Modal")); // Lazy-loaded modal
 
-function App() {
+function Home() {
   const [showModal, setShowModal] = useState(false);
 
   return (
@@ -20,4 +20,4 @@ function App() {
   );
 }
 
-export default App;
+export default Home;
