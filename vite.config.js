@@ -1,30 +1,30 @@
-// vite.config.js
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import path from 'path';
+import { resolve } from 'path';
 
-export default defineConfig(({ mode }) => {
-    return {
-        plugins: [react()],
-        build: {
-            outDir: 'build',
-            rollupOptions: {
-                input: {
-                    Home: path.resolve(__dirname, 'modules/Home/app.jsx'),
-                    Afaq: path.resolve(__dirname, 'modules/Afaq/app.jsx'),
-                    // Add more SPA entries here
-                },
-                output: {
-                    entryFileNames: `[name]/main.js`,
-                    assetFileNames: `[name]/style.css`,
-                    chunkFileNames: `[name]/chunks/[name].js`,
-                },
+export default defineConfig({
+    plugins: [react()],
+    
+    build: {
+        rollupOptions: {
+            input: {
+                app: resolve(__dirname, 'modules/App/app.jsx'),
+                // Add more SPAs here:
+                // dashboard: resolve(__dirname, 'modules/Dashboard/app.jsx'),
             },
+            output: {
+                entryFileNames: '[name]/main.js',
+                chunkFileNames: '[name]/chunks/[name].js',
+                assetFileNames: '[name]/[name].[ext]'
+            }
         },
-        server: {
-            port: 3000,
-            hmr: true,
-            origin: 'http://localhost:3000',
-        },
-    };
+        outDir: 'build',
+    },
+    
+    server: {
+        port: 3000,
+        proxy: {
+            '/api': 'http://localhost:8000'
+        }
+    }
 });

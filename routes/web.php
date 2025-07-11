@@ -1,8 +1,12 @@
 <?php
-use FastRoute\RouteCollector;
 
-return function (RouteCollector $Route) {
-    $Route->addRoute('GET', '/', 'views/index.php');
-    $Route->addRoute('GET', '/awais', 'views/awais.php');
-    $Route->addRoute('GET', '/awais/{name}', 'views/awais.php'); // dynamic parameter
-};
+use App\Core\Route;
+use App\Controllers\HomeController;
+
+// Homepage
+Route::get('/', [HomeController::class, 'index']);
+
+// React SPA example
+Route::get('/app', [HomeController::class, 'spa']);
+
+// Add your routes here...
