@@ -2,52 +2,111 @@
 layout: default
 title: PHP React MVC Template
 nav_order: 1
-description: "A modern PHP template with Laravel-style MVC architecture and React SPA integration"
+description: "A comprehensive PHP MVC framework with React integration implementing advanced programming concepts"
 permalink: /
 ---
 
 # PHP React MVC Template
 {: .fs-9 }
 
-A modern, production-ready PHP template combining Laravel-style MVC architecture with React SPAs powered by Vite.
+A sophisticated web application framework that combines the robustness of PHP MVC architecture with the interactivity of React SPAs, implementing advanced design patterns and programming concepts.
 {: .fs-6 .fw-300 }
 
-[Get started now](#quick-start){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 }
+[Get started now](#system-architecture){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 }
 [View on GitHub](https://github.com/AwaisMehnga/php-react-starter-template){: .btn .fs-5 .mb-4 .mb-md-0 }
 
 ---
 
-## Features
+## System Architecture Overview
 
-✨ **Laravel-style MVC Architecture**
-- Clean separation of concerns
-- Eloquent-like models with database integration
-- Middleware pipeline for request handling
-- Flexible routing with FastRoute
+This template implements several sophisticated design patterns and programming concepts:
 
-⚛️ **React SPA Integration**  
-- Multiple React applications in one project
-- Vite for lightning-fast development
-- Code splitting and optimization
-- Hot module replacement
+### Core Design Patterns
 
-🗄️ **Database Integration**
-- PDO with prepared statements
-- Migration-like SQL setup
-- Model relationships and queries
-- Transaction support
+- **MVC (Model-View-Controller)**: Clean separation of concerns with dedicated layers
+- **Singleton Pattern**: Database connections and application instance management  
+- **Pipeline Pattern**: Middleware system for request/response processing
+- **Active Record**: Object-oriented database interactions through models
+- **Registry Pattern**: Middleware and route registration system
+- **Factory Pattern**: Dynamic controller and model instantiation
 
-🛡️ **Security & Best Practices**
-- CSRF protection middleware
-- Password hashing
-- Role-based access control
-- Input validation helpers
+### Request Processing Flow
 
-📦 **Developer Experience**
-- PSR-4 autoloading
-- Composer dependency management
-- One-command project setup
-- Comprehensive documentation
+```
+HTTP Request → Router (FastRoute) → Application → Middleware Pipeline → Controller → Model → Database
+                                                                       ↓
+HTTP Response ← View/JSON ← Controller ← Model ← Database Operations
+```
+
+---
+
+## How Each Component Works
+
+### 1. **Routing System** - Request Dispatching
+
+The routing system uses **FastRoute** library with custom middleware integration:
+
+```php
+// Route definition with fluent interface
+Route::get('/users/{id}', [UserController::class, 'show'])
+     ->middleware(['auth', 'throttle']);
+
+// Compiled into optimized dispatcher
+$dispatcher = FastRoute\simpleDispatcher(function(RouteCollector $r) {
+    Route::setRouteCollector($r);
+    // Load route files and register patterns
+});
+```
+
+**How it works internally:**
+- Routes are compiled into **optimized arrays** and **regular expressions**
+- Static routes use **hash maps** for O(1) lookup performance
+- Dynamic routes use **compiled regex patterns** for parameter extraction
+- Middleware is applied using the **Pipeline Pattern**
+
+### 2. **Controllers** - Request Handling
+
+Controllers use **Reflection API** for automatic parameter injection:
+
+```php
+class UserController extends Controller
+{
+    public function show($id) // $id automatically injected from route
+    {
+        $user = User::find($id);
+        return $this->json(['user' => $user]);
+    }
+}
+```
+
+**Programming concepts:**
+- **Parameter Injection**: Uses `ReflectionMethod` to match route parameters
+- **Template Method Pattern**: Base controller provides common functionality
+- **Response Factory**: Methods like `json()`, `view()`, `redirect()`
+
+### 3. **Middleware** - Request Pipeline
+
+Implements the **Chain of Responsibility** pattern:
+
+```php
+// Middleware pipeline construction using array_reduce
+$pipeline = array_reduce(
+    array_reverse($middleware),
+    function ($next, $middlewareName) {
+        return function () use ($middlewareName, $next) {
+            $middleware = new $middlewareName();
+            return $middleware->handle($next);
+        };
+    },
+    $destination // Final controller action
+);
+```
+
+**How the pipeline works:**
+- Each middleware **wraps** the next one in a closure
+- Creates a "Russian Doll" structure of nested function calls
+- Allows **before** and **after** request processing
+- Enables **early termination** (auth failures, rate limiting)
 
 ---
 

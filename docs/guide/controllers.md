@@ -7,7 +7,7 @@ nav_order: 3
 # Controllers
 {: .no_toc }
 
-Controllers handle HTTP requests, process business logic, and return responses in the MVC architecture.
+Controllers handle HTTP requests and coordinate between models and views. This guide explains how the controller system works internally and demonstrates the underlying PHP concepts.
 {: .fs-6 .fw-300 }
 
 ## Table of contents
@@ -18,15 +18,511 @@ Controllers handle HTTP requests, process business logic, and return responses i
 
 ---
 
-## Overview
+## How Controllers Work Internally
 
-Controllers in this template follow Laravel-style conventions with:
-- Clean separation of concerns
-- Automatic dependency injection
-- Built-in helper methods
-- Middleware support
+### The Controller Base Class
+
+The base `Controller` class provides foundational methods that every controller inherits. Here's how it works:
+
+```php
+<?php
+namespace App\Core;
+
+class Controller
+{
+    // View rendering uses PHP's extract() function to convert array keys to variables
+    protected function view($view, $data = [])
+    {
+        extract($data); // Converts ['user' => $userObj] to $user variable
+        $viewPath = __DIR__ . '/../../views/' . $view . '.php';
+        
+        if (file_exists($viewPath)) {
+            require $viewPath; // PHP includes and executes the view file
+        } else {
+            throw new \Exception("View not found: {$view}");
+        }
+    }
+    
+    // JSON responses use PHP's http_response_code() and header() functions
+    protected function json($data, $statusCode = 200)
+    {
+        http_response_code($statusCode);
+        header('Content-Type: application/json');
+        echo json_encode($data); // Converts PHP data to JSON string
+        exit; // Terminates script execution
+    }
+    
+    // Request data merges superglobals $_GET and $_POST
+    protected function request($key = null, $default = null)
+    {
+        $data = array_merge($_GET, $_POST); // Combines query params and form data
+        return $key === null ? $data : ($data[$key] ?? $default);
+    }
+}
+```
+
+### Parameter Injection System
+
+The Application class uses PHP's **Reflection API** to automatically inject route parameters into controller methods:
+
+```php
+// In Application::callAction()
+$reflection = new \ReflectionMethod($controller, $method);
+$parameters = $reflection->getParameters();
+$args = [];
+
+foreach ($parameters as $param) {
+    $paramName = $param->getName();
+    if (isset($vars[$paramName])) {
+        $args[] = $vars[$paramName]; // Route parameter matched
+    } elseif ($param->isDefaultValueAvailable()) {
+        $args[] = $param->getDefaultValue(); // Use default value
+    } else {
+        throw new \Exception("Required parameter {$paramName} not found");
+    }
+}
+
+call_user_func_array([$controller, $method], $args);
+```
+
+This allows you to write controller methods like:
+
+```php
+public function show($id, $slug = 'default')
+{
+    // $id comes from route parameter {id}
+    // $slug comes from route parameter {slug} or uses default
+}
+```
 
 ---
+
+## Programming Concepts in Action
+
+### 1. Method Overloading Through Magic Methods
+
+Controllers use PHP's `__call()` magic method pattern (though not explicitly implemented here, the concept applies):
+
+```php
+class ProductController extends Controller
+{
+    // Standard CRUD methods
+    public function index() { /* List all products */ }
+    public function show($id) { /* Show single product */ }
+    public function store() { /* Create new product */ }
+    public function update($id) { /* Update existing product */ }
+    public function destroy($id) { /* Delete product */ }
+}
+```
+
+### 2. Response Factory Pattern
+
+Different response types are handled through method chaining:
+
+```php
+class ApiController extends Controller
+{
+    public function success($data, $message = 'Success')
+    {
+        return $this->json([
+            'success' => true,
+            'data' => $data,
+            'message' => $message
+        ]);
+    }
+    
+    public function error($message, $code = 400)
+    {
+        return $this->json([
+            'success' => false,
+            'error' => $message
+        ], $code);
+    }
+}
+```
+
+### 3. Template Method Pattern
+
+Resource controllers follow a template pattern:
+
+```php
+abstract class ResourceController extends Controller
+{
+    // Template method that defines the structure
+    final public function handleRequest($action, $params = [])
+    {
+        $this->beforeAction();
+        $result = $this->$action(...$params);
+        $this->afterAction();
+        return $result;
+    }
+    
+    // Hooks that subclasses can override
+    protected function beforeAction() { /* Override in subclass */ }
+    protected function afterAction() { /* Override in subclass */ }
+}
+```
+
+---
+
+## Advanced Controller Concepts
+
+### 1. Controller Resolution Process
+
+When a route is matched, here's how the controller is instantiated and called:
+
+```php
+// 1. Route definition
+Route::get('/users/{id}', [UserController::class, 'show']);
+
+// 2. Application resolves the controller
+[$controllerClass, $method] = $action; // ['App\Controllers\UserController', 'show']
+
+// 3. Class existence check
+if (!class_exists($controllerClass)) {
+    throw new \Exception("Controller not found: {$controllerClass}");
+}
+
+// 4. Controller instantiation
+$controller = new $controllerClass(); // PHP instantiates the class
+
+// 5. Method existence check
+if (!method_exists($controller, $method)) {
+    throw new \Exception("Method {$method} not found");
+}
+
+// 6. Method invocation with parameters
+call_user_func_array([$controller, $method], $args);
+```
+
+### 2. Dependency Injection Container
+
+While not fully implemented in the base template, you can extend the controller resolution to support dependency injection:
+
+```php
+class Container
+{
+    private $bindings = [];
+    
+    public function bind($abstract, $concrete)
+    {
+        $this->bindings[$abstract] = $concrete;
+    }
+    
+    public function resolve($class)
+    {
+        $reflector = new ReflectionClass($class);
+        $constructor = $reflector->getConstructor();
+        
+        if (!$constructor) {
+            return new $class;
+        }
+        
+        $parameters = $constructor->getParameters();
+        $dependencies = [];
+        
+        foreach ($parameters as $parameter) {
+            $type = $parameter->getType();
+            if ($type && !$type->isBuiltin()) {
+                $dependencies[] = $this->resolve($type->getName());
+            }
+        }
+        
+        return $reflector->newInstanceArgs($dependencies);
+    }
+}
+
+// Usage
+class UserController extends Controller
+{
+    private $userService;
+    
+    public function __construct(UserService $userService)
+    {
+        $this->userService = $userService; // Automatically injected
+    }
+}
+```
+
+### 3. Controller Middleware System
+
+Controllers can apply middleware using method chaining:
+
+```php
+class SecureController extends Controller
+{
+    public function __construct()
+    {
+        $this->middleware('auth'); // Apply to all methods
+        $this->middleware('admin')->only(['destroy', 'edit']);
+        $this->middleware('throttle:60,1')->except(['index']);
+    }
+    
+    private function middleware($name)
+    {
+        // Store middleware for later application
+        return new MiddlewareBuilder($this, $name);
+    }
+}
+
+class MiddlewareBuilder
+{
+    public function only(array $methods)
+    {
+        // Apply middleware only to specified methods
+        return $this;
+    }
+    
+    public function except(array $methods)
+    {
+        // Apply middleware to all methods except specified
+        return $this;
+    }
+}
+```
+
+---
+
+## Real-World Implementation Examples
+
+### 1. RESTful API Controller
+
+```php
+class TaskController extends Controller
+{
+    public function index()
+    {
+        // Using array_map with closures for data transformation
+        $tasks = array_map(function($task) {
+            return [
+                'id' => $task->id,
+                'title' => $task->title,
+                'completed' => (bool) $task->completed,
+                'created_at' => $task->created_at->format('Y-m-d H:i:s')
+            ];
+        }, Task::all());
+        
+        return $this->json(['data' => $tasks]);
+    }
+    
+    public function store()
+    {
+        $data = $this->request();
+        
+        // Input validation using array operations
+        $required = ['title', 'description'];
+        $missing = array_diff($required, array_keys($data));
+        
+        if (!empty($missing)) {
+            return $this->json([
+                'error' => 'Missing required fields: ' . implode(', ', $missing)
+            ], 422);
+        }
+        
+        // Data sanitization using array_map
+        $sanitized = array_map('trim', $data);
+        $sanitized = array_map('htmlspecialchars', $sanitized);
+        
+        $task = Task::create($sanitized);
+        return $this->json(['data' => $task], 201);
+    }
+    
+    public function update($id)
+    {
+        $task = Task::find($id);
+        if (!$task) {
+            return $this->json(['error' => 'Task not found'], 404);
+        }
+        
+        // Partial update using array_intersect_key
+        $data = $this->request();
+        $fillable = ['title', 'description', 'completed'];
+        $updates = array_intersect_key($data, array_flip($fillable));
+        
+        $task->fill($updates)->save();
+        return $this->json(['data' => $task]);
+    }
+}
+```
+
+### 2. File Upload Controller
+
+```php
+class FileController extends Controller
+{
+    public function upload()
+    {
+        // File validation using $_FILES superglobal
+        if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
+            return $this->json(['error' => 'No file uploaded'], 400);
+        }
+        
+        $file = $_FILES['file'];
+        
+        // MIME type validation using finfo
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mimeType = $finfo->file($file['tmp_name']);
+        $allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+        
+        if (!in_array($mimeType, $allowedTypes)) {
+            return $this->json(['error' => 'Invalid file type'], 400);
+        }
+        
+        // Generate unique filename using hash
+        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $filename = hash('sha256', $file['name'] . time()) . '.' . $extension;
+        $destination = __DIR__ . '/../../public/uploads/' . $filename;
+        
+        // Move uploaded file
+        if (move_uploaded_file($file['tmp_name'], $destination)) {
+            return $this->json(['filename' => $filename]);
+        }
+        
+        return $this->json(['error' => 'Upload failed'], 500);
+    }
+}
+```
+
+### 3. Authentication Controller
+
+```php
+class AuthController extends Controller
+{
+    public function login()
+    {
+        $credentials = $this->request();
+        
+        // Input validation using filter_var
+        if (!filter_var($credentials['email'], FILTER_VALIDATE_EMAIL)) {
+            return $this->json(['error' => 'Invalid email format'], 422);
+        }
+        
+        $user = User::findByEmail($credentials['email']);
+        
+        // Password verification using password_verify
+        if (!$user || !password_verify($credentials['password'], $user->password)) {
+            return $this->json(['error' => 'Invalid credentials'], 401);
+        }
+        
+        // Session management
+        session_start();
+        $_SESSION['user_id'] = $user->id;
+        $_SESSION['user_role'] = $user->role;
+        
+        // Generate CSRF token
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        
+        return $this->json([
+            'user' => $user->toArray(),
+            'csrf_token' => $_SESSION['csrf_token']
+        ]);
+    }
+    
+    public function logout()
+    {
+        session_start();
+        session_destroy(); // Clear all session data
+        
+        return $this->json(['message' => 'Logged out successfully']);
+    }
+}
+```
+
+---
+
+## Error Handling Patterns
+
+### 1. Exception Handling in Controllers
+
+```php
+class OrderController extends Controller
+{
+    public function process($id)
+    {
+        try {
+            $order = Order::findOrFail($id); // Throws exception if not found
+            
+            // Business logic that might throw exceptions
+            $this->validateOrder($order);
+            $this->processPayment($order);
+            $this->sendConfirmation($order);
+            
+            return $this->json(['message' => 'Order processed successfully']);
+            
+        } catch (ValidationException $e) {
+            return $this->json(['error' => $e->getMessage()], 422);
+        } catch (PaymentException $e) {
+            return $this->json(['error' => 'Payment failed'], 402);
+        } catch (Exception $e) {
+            // Log the error (in a real app)
+            error_log($e->getMessage());
+            return $this->json(['error' => 'Internal server error'], 500);
+        }
+    }
+    
+    private function validateOrder($order)
+    {
+        if (!$order->isValid()) {
+            throw new ValidationException('Order validation failed');
+        }
+    }
+}
+```
+
+### 2. Response Status Patterns
+
+```php
+trait ResponseHelpers
+{
+    protected function success($data = [], $message = 'Success')
+    {
+        return $this->json([
+            'success' => true,
+            'message' => $message,
+            'data' => $data
+        ]);
+    }
+    
+    protected function created($data, $message = 'Created successfully')
+    {
+        return $this->json([
+            'success' => true,
+            'message' => $message,
+            'data' => $data
+        ], 201);
+    }
+    
+    protected function notFound($message = 'Resource not found')
+    {
+        return $this->json([
+            'success' => false,
+            'message' => $message
+        ], 404);
+    }
+    
+    protected function validationError($errors)
+    {
+        return $this->json([
+            'success' => false,
+            'message' => 'Validation failed',
+            'errors' => $errors
+        ], 422);
+    }
+}
+
+class ProductController extends Controller
+{
+    use ResponseHelpers;
+    
+    public function show($id)
+    {
+        $product = Product::find($id);
+        return $product ? $this->success($product) : $this->notFound();
+    }
+}
+```
+
+This controller system provides a clean, maintainable way to handle HTTP requests while leveraging PHP's built-in features and object-oriented programming concepts.
 
 ## Creating Controllers
 

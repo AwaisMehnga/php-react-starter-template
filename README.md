@@ -1,51 +1,73 @@
-# PHP React Starter Template
+# PHP React MVC Template
 
-A modern, Laravel-style MVC framework for PHP with React SPA integration, perfect for building full-stack web applications.
+A sophisticated web application framework implementing advanced design patterns and programming concepts. This template combines robust PHP MVC architecture with modern React SPAs, demonstrating enterprise-level software engineering principles.
 
-## 🚀 Features
+## 🏗️ Architecture Overview
 
-### Backend (PHP)
-- **Laravel-style MVC** - Familiar structure for PHP developers
-- **Eloquent-style Models** - Database relationships and queries
-- **FastRoute Integration** - Powerful routing with middleware support
-- **PSR-4 Autoloading** - Modern PHP standards
-- **Middleware Pipeline** - Authentication, CORS, validation, and more
-- **Database Migrations** - Version control for your database
+### Design Patterns Implemented
 
-### Frontend (React + Vite)
-- **Multiple SPAs** - Each module can be a separate React app
-- **Hot Module Replacement** - Fast development with instant updates
-- **Modern React** - Hooks, Context, and latest practices
-- **Vite Build System** - Lightning-fast builds and development
-- **Component Library** - Reusable UI components
+- **MVC (Model-View-Controller)**: Clean separation of presentation, business logic, and data layers
+- **Singleton Pattern**: Database connection management and application instance control
+- **Pipeline Pattern**: Middleware system using the Chain of Responsibility pattern
+- **Active Record Pattern**: Object-oriented database interactions with automatic mapping
+- **Registry Pattern**: Service location for middleware and route management
+- **Factory Pattern**: Dynamic instantiation of controllers and models
+- **Observer Pattern**: Model events and lifecycle hooks
 
-### Developer Experience
-- **One-Command Setup** - Automated project configuration
-- **Environment Management** - Multiple environment support
-- **Comprehensive Documentation** - GitHub Pages with guides
-- **Testing Ready** - PHPUnit setup for backend testing
+### Request Processing Pipeline
 
-## 📋 Requirements
-
-- PHP 8.0 or higher
-- Composer
-- Node.js 16+ and npm
-- MySQL/MariaDB or SQLite
-- Web server (Apache/Nginx) or XAMPP for development
-
-## 🏃‍♂️ Quick Start
-
-### 1. Clone the Template
-
-```bash
-git clone https://github.com/your-username/php-react-starter-template.git my-project
-cd my-project
+```
+HTTP Request → Router → Application → Middleware Pipeline → Controller → Model → Database
+                                    ↓
+HTTP Response ← View/JSON ← Controller ← Business Logic ← Data Layer
 ```
 
-### 2. Run Interactive Setup
+## 🔧 Core Components Deep Dive
 
-```bash
-php setup.php
+### 1. Routing System
+
+**Technology**: FastRoute library with custom middleware integration
+
+**How it works**:
+- Routes are compiled into optimized hash maps and regular expressions
+- Static routes use O(1) hash lookups for maximum performance
+- Dynamic routes use compiled regex patterns for parameter extraction
+- Middleware is applied using functional programming concepts
+
+```php
+// Route definition with fluent interface
+Route::get('/users/{id}', [UserController::class, 'show'])
+     ->middleware(['auth', 'throttle:60,1']);
+
+// Group routes with shared middleware and prefixes
+Route::group(['prefix' => 'api', 'middleware' => 'cors'], function () {
+    Route::resource('users', UserController::class);
+});
+```
+
+### 2. Controller System
+
+**Programming Concepts**: 
+- Reflection API for automatic parameter injection
+- Template Method Pattern for consistent structure
+- Dependency Injection for testability
+
+```php
+class UserController extends Controller
+{
+    // Automatic parameter injection from route
+    public function show($id)
+    {
+        $user = User::find($id);
+        
+        // Automatic content negotiation
+        if ($this->expectsJson()) {
+            return $this->json(['data' => $user]);
+        }
+        
+        return $this->view('users.show', compact('user'));
+    }
+}
 ```
 
 The setup script will guide you through:

@@ -7,7 +7,7 @@ nav_order: 2
 # Getting Started
 {: .no_toc }
 
-This guide will help you set up and start developing with the PHP React MVC Template.
+This comprehensive guide explains how the PHP React MVC Template works internally and how to develop with it effectively.
 {: .fs-6 .fw-300 }
 
 ## Table of contents
@@ -15,6 +15,32 @@ This guide will help you set up and start developing with the PHP React MVC Temp
 
 1. TOC
 {:toc}
+
+---
+
+## System Architecture Overview
+
+This template implements a sophisticated MVC (Model-View-Controller) architecture with several design patterns:
+
+### Core Design Patterns
+
+1. **Singleton Pattern**: The `Application` class uses the singleton pattern to ensure only one instance manages the entire request lifecycle.
+
+2. **Pipeline Pattern**: Middleware is implemented using a pipeline pattern where each middleware is a layer that can process, modify, or terminate the request flow.
+
+3. **Registry Pattern**: The Application class maintains a middleware registry that maps string identifiers to middleware classes.
+
+4. **Dependency Injection**: Controllers automatically receive route parameters through PHP's Reflection API.
+
+5. **Active Record Pattern**: Models provide an object-oriented interface to database records.
+
+### Request Flow Architecture
+
+```
+HTTP Request → Router → Application → Middleware Pipeline → Controller → Model → Database
+                                                         ↓
+HTTP Response ← View/JSON ← Controller ← Model ← Database
+```
 
 ---
 

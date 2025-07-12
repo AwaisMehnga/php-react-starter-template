@@ -7,7 +7,7 @@ nav_order: 5
 # Routing
 {: .no_toc }
 
-The routing system provides Laravel-style route definitions with support for middleware, groups, and parameters.
+The routing system implements a sophisticated request dispatching mechanism using FastRoute library with custom middleware pipeline integration.
 {: .fs-6 .fw-300 }
 
 ## Table of contents
@@ -18,16 +18,422 @@ The routing system provides Laravel-style route definitions with support for mid
 
 ---
 
-## Overview
+## How Routing Works Internally
 
-The routing system features:
-- Laravel-style syntax
-- Route parameters and constraints
-- Middleware pipeline
-- Route groups with shared attributes
-- RESTful resource routes
+### The Route Registration Process
+
+The routing system uses a **Fluent Interface** pattern combined with the **Builder Pattern**:
+
+```php
+<?php
+namespace App\Core;
+
+use FastRoute\RouteCollector;
+
+class Route
+{
+    private static $routeCollector;    // FastRoute's collector instance
+    private static $middleware = [];   // Route-specific middleware
+    private static $groupOptions = []; // Current group context
+    
+    // Fluent interface methods
+    public static function get($uri, $action)
+    {
+        self::addRoute('GET', $uri, $action);
+    }
+    
+    public static function middleware($middleware)
+    {
+        if (is_string($middleware)) {
+            $middleware = [$middleware];
+        }
+        
+        self::$middleware = array_merge(self::$middleware, $middleware);
+        return new static(); // Returns instance for method chaining
+    }
+}
+```
+
+### Route Compilation Process
+
+Here's how routes are processed from definition to execution:
+
+```php
+// 1. Route Definition (in routes/web.php)
+Route::get('/users/{id}', [UserController::class, 'show']);
+
+// 2. Internal Processing in addRoute()
+private static function addRoute($method, $uri, $action)
+{
+    // Apply group prefix if within route group
+    if (isset(self::$groupOptions['prefix'])) {
+        $uri = '/' . trim(self::$groupOptions['prefix'], '/') . '/' . ltrim($uri, '/');
+        $uri = rtrim($uri, '/') ?: '/';
+    }
+    
+    // Collect all applicable middleware
+    $middleware = [];
+    
+    // Group middleware (inherited from Route::group())
+    if (isset(self::$groupOptions['middleware'])) {
+        $groupMiddleware = is_array(self::$groupOptions['middleware']) 
+            ? self::$groupOptions['middleware'] 
+            : [self::$groupOptions['middleware']];
+        $middleware = array_merge($middleware, $groupMiddleware);
+    }
+    
+    // Route-specific middleware (from Route::middleware())
+    $middleware = array_merge($middleware, self::$middleware);
+    
+    // Create route data structure
+    $routeData = [
+        'action' => $action,      // Controller and method
+        'middleware' => $middleware // Middleware stack
+    ];
+    
+    // Register with FastRoute
+    self::$routeCollector->addRoute($method, $uri, $routeData);
+    
+    // Reset route-specific middleware for next route
+    self::$middleware = [];
+}
+```
+
+### Route Dispatching Mechanism
+
+The `router.php` file handles the request dispatching:
+
+```php
+// 1. Create FastRoute dispatcher
+$dispatcher = FastRoute\simpleDispatcher(function(RouteCollector $r) use ($routeFiles) {
+    Route::setRouteCollector($r); // Inject collector into Route class
+    
+    // Load all route files
+    foreach ($routeFiles as $file) {
+        require $file; // Executes route definitions
+    }
+});
+
+// 2. Parse incoming request
+$httpMethod = $_SERVER['REQUEST_METHOD'];
+$uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+
+// 3. Dispatch route
+$routeInfo = $dispatcher->dispatch($httpMethod, $uri);
+
+// 4. Handle dispatch result
+switch ($routeInfo[0]) {
+    case FastRoute\Dispatcher::FOUND:
+        $vars = $routeInfo[2]; // Route parameters
+        $app->handleRoute($routeInfo, $vars); // Execute middleware pipeline + controller
+        break;
+        
+    case FastRoute\Dispatcher::NOT_FOUND:
+        // 404 handling
+        break;
+        
+    case FastRoute\Dispatcher::METHOD_NOT_ALLOWED:
+        // 405 handling
+        break;
+}
+```
 
 ---
+
+## Advanced Routing Concepts
+
+### 1. Route Parameter Resolution
+
+FastRoute uses **regular expressions** to match route patterns:
+
+```php
+// Route pattern: /users/{id}/posts/{slug}
+// Compiles to regex: #^/users/([^/]+)/posts/([^/]+)$#
+
+// When request "/users/123/posts/my-first-post" comes in:
+// $vars = ['id' => '123', 'slug' => 'my-first-post']
+```
+
+The parameter injection uses **Named Capture Groups**:
+
+```php
+public function show($id, $slug)
+{
+    // PHP Reflection automatically maps:
+    // 'id' parameter → $id argument
+    // 'slug' parameter → $slug argument
+}
+```
+
+### 2. Route Group Context Management
+
+Route groups use a **Stack-based Context** system:
+
+```php
+public static function group($options, $callback)
+{
+    $prevGroupOptions = self::$groupOptions; // Save current context
+    
+    // Merge new options with current context
+    self::$groupOptions = array_merge(self::$groupOptions, $options);
+    
+    // Execute callback with new context
+    $callback(new static());
+    
+    // Restore previous context (stack pop)
+    self::$groupOptions = $prevGroupOptions;
+}
+```
+
+This allows nested groups:
+
+```php
+Route::group(['prefix' => 'api'], function () {
+    Route::group(['prefix' => 'v1'], function () {
+        Route::group(['middleware' => 'auth'], function () {
+            Route::get('/users', [UserController::class, 'index']);
+            // Final route: /api/v1/users with 'auth' middleware
+        });
+    });
+});
+```
+
+### 3. Middleware Pipeline Integration
+
+The routing system integrates with the middleware pipeline through the Application class:
+
+```php
+public function handleRoute($routeInfo, $vars = [])
+{
+    $routeData = $routeInfo[1];
+    $action = $routeData['action'];
+    $middleware = $routeData['middleware'] ?? [];
+    
+    // Create middleware pipeline using array_reduce
+    $pipeline = $this->createMiddlewarePipeline($middleware, function() use ($action, $vars) {
+        return $this->callAction($action, $vars);
+    });
+    
+    return $pipeline(); // Execute the pipeline
+}
+
+private function createMiddlewarePipeline($middleware, $destination)
+{
+    // Use array_reduce to build nested closures (Russian Doll pattern)
+    return array_reduce(
+        array_reverse($middleware), // Reverse to maintain correct order
+        function ($next, $middlewareName) {
+            return function () use ($middlewareName, $next) {
+                $middlewareClass = $this->middlewareRegistry[$middlewareName];
+                $middlewareInstance = new $middlewareClass();
+                return $middlewareInstance->handle($next);
+            };
+        },
+        $destination // Final destination (controller action)
+    );
+}
+```
+
+---
+
+## Route Patterns and Examples
+
+### 1. Parameter Constraints
+
+You can add parameter validation using FastRoute's regex patterns:
+
+```php
+// Only numeric IDs
+Route::get('/users/{id:[0-9]+}', [UserController::class, 'show']);
+
+// Alphanumeric slugs
+Route::get('/posts/{slug:[a-zA-Z0-9-]+}', [PostController::class, 'show']);
+
+// Optional parameters with constraints
+Route::get('/search/{query?}', [SearchController::class, 'index']);
+```
+
+### 2. HTTP Method Handling
+
+The system supports all HTTP methods through method delegation:
+
+```php
+class Route
+{
+    public static function get($uri, $action) { self::addRoute('GET', $uri, $action); }
+    public static function post($uri, $action) { self::addRoute('POST', $uri, $action); }
+    public static function put($uri, $action) { self::addRoute('PUT', $uri, $action); }
+    public static function patch($uri, $action) { self::addRoute('PATCH', $uri, $action); }
+    public static function delete($uri, $action) { self::addRoute('DELETE', $uri, $action); }
+    public static function options($uri, $action) { self::addRoute('OPTIONS', $uri, $action); }
+}
+```
+
+### 3. Resource Route Pattern
+
+You can implement RESTful resource routes:
+
+```php
+class Route
+{
+    public static function resource($name, $controller)
+    {
+        $routes = [
+            ['GET', "/{$name}", 'index'],
+            ['GET', "/{$name}/create", 'create'],
+            ['POST', "/{$name}", 'store'],
+            ['GET', "/{$name}/{id}", 'show'],
+            ['GET', "/{$name}/{id}/edit", 'edit'],
+            ['PUT', "/{$name}/{id}", 'update'],
+            ['PATCH', "/{$name}/{id}", 'update'],
+            ['DELETE', "/{$name}/{id}", 'destroy'],
+        ];
+        
+        foreach ($routes as [$method, $uri, $action]) {
+            self::addRoute($method, $uri, [$controller, $action]);
+        }
+    }
+}
+
+// Usage
+Route::resource('posts', PostController::class);
+// Creates all 8 RESTful routes automatically
+```
+
+---
+
+## Real-World Routing Examples
+
+### 1. API Versioning
+
+```php
+// routes/api.php
+Route::group(['prefix' => 'api'], function () {
+    
+    // Version 1
+    Route::group(['prefix' => 'v1'], function () {
+        Route::group(['middleware' => ['cors', 'auth:api']], function () {
+            Route::resource('users', Api\V1\UserController::class);
+            Route::resource('posts', Api\V1\PostController::class);
+        });
+    });
+    
+    // Version 2 with breaking changes
+    Route::group(['prefix' => 'v2'], function () {
+        Route::group(['middleware' => ['cors', 'auth:jwt']], function () {
+            Route::resource('users', Api\V2\UserController::class);
+            Route::resource('posts', Api\V2\PostController::class);
+        });
+    });
+});
+```
+
+### 2. Multi-tenant Routing
+
+```php
+Route::group(['domain' => '{tenant}.example.com'], function () {
+    Route::get('/', function ($tenant) {
+        // Handle tenant-specific homepage
+        $tenant = Tenant::findByDomain($tenant);
+        return view('tenant.home', compact('tenant'));
+    });
+    
+    Route::group(['middleware' => 'tenant'], function () {
+        Route::resource('posts', TenantPostController::class);
+    });
+});
+```
+
+### 3. Complex Route Groups
+
+```php
+// Admin panel with nested organization
+Route::group([
+    'prefix' => 'admin',
+    'middleware' => ['auth', 'admin'],
+    'namespace' => 'Admin'
+], function () {
+    
+    Route::get('/dashboard', [DashboardController::class, 'index']);
+    
+    // User management
+    Route::group(['prefix' => 'users'], function () {
+        Route::get('/', [UserController::class, 'index']);
+        Route::get('/banned', [UserController::class, 'banned']);
+        Route::post('/{id}/ban', [UserController::class, 'ban']);
+        Route::post('/{id}/unban', [UserController::class, 'unban']);
+    });
+    
+    // Content management
+    Route::group(['prefix' => 'content'], function () {
+        Route::resource('posts', PostController::class);
+        Route::resource('categories', CategoryController::class);
+        
+        // Bulk operations
+        Route::post('/posts/bulk-delete', [PostController::class, 'bulkDelete']);
+        Route::post('/posts/bulk-publish', [PostController::class, 'bulkPublish']);
+    });
+});
+```
+
+### 4. Rate-Limited Routes
+
+```php
+// Different rate limits for different endpoints
+Route::group(['middleware' => 'throttle:60,1'], function () {
+    Route::get('/api/search', [SearchController::class, 'index']);
+});
+
+Route::group(['middleware' => 'throttle:10,1'], function () {
+    Route::post('/api/upload', [FileController::class, 'upload']);
+});
+
+Route::group(['middleware' => 'throttle:5,1'], function () {
+    Route::post('/api/send-email', [EmailController::class, 'send']);
+});
+```
+
+---
+
+## Route Caching and Performance
+
+### 1. Route Compilation Optimization
+
+FastRoute compiles routes into optimized arrays:
+
+```php
+// Development: Routes compiled on every request
+$dispatcher = FastRoute\simpleDispatcher($routeDefinitionCallback);
+
+// Production: Routes cached as PHP arrays
+$dispatcher = FastRoute\cachedDispatcher($routeDefinitionCallback, [
+    'cacheFile' => __DIR__ . '/cache/routes.cache',
+    'cacheDisabled' => false,
+]);
+```
+
+### 2. Route Matching Performance
+
+FastRoute uses a **two-stage matching process**:
+
+1. **Static routes** are stored in a hash map for O(1) lookup
+2. **Dynamic routes** are compiled into a single regex for efficient matching
+
+```php
+// Static routes (fast hash lookup)
+$staticRoutes = [
+    '/about' => ['handler' => AboutController::class],
+    '/contact' => ['handler' => ContactController::class],
+];
+
+// Dynamic routes (compiled regex)
+$dynamicRoutes = [
+    '#^/users/([^/]+)$#' => ['handler' => UserController::class, 'vars' => ['id']],
+    '#^/posts/([^/]+)/comments/([^/]+)$#' => ['handler' => CommentController::class, 'vars' => ['postId', 'commentId']],
+];
+```
+
+This routing system provides excellent performance while maintaining flexibility and clean syntax for route definitions.
 
 ## Basic Routing
 

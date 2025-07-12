@@ -7,7 +7,7 @@ nav_order: 8
 # Middleware
 {: .no_toc }
 
-Implement request/response middleware for authentication, CORS, logging, and custom processing.
+Middleware implements the **Chain of Responsibility** pattern to process HTTP requests through a pipeline of handlers before reaching the controller.
 {: .fs-6 .fw-300 }
 
 ## Table of contents
@@ -18,36 +18,92 @@ Implement request/response middleware for authentication, CORS, logging, and cus
 
 ---
 
-## Overview
+## How Middleware Works Internally
 
-Middleware provides a powerful mechanism for filtering HTTP requests entering your application. Common uses include:
-- Authentication and authorization
-- CORS handling
-- Request logging
-- Rate limiting
-- Input validation
-- Response transformation
+### The Pipeline Pattern Implementation
 
----
+The middleware system uses the **Pipeline Pattern** (also known as the **Russian Doll Pattern**) where each middleware wraps the next one:
 
-## Middleware System
+```php
+// Conceptual middleware stack
+Request → Auth → CORS → RateLimit → Controller → RateLimit → CORS → Auth → Response
+```
 
-### Core Middleware Interface
+### Middleware Base Class
+
+All middleware extends the abstract `Middleware` class:
 
 ```php
 <?php
-
 namespace App\Core;
 
-interface MiddlewareInterface
+abstract class Middleware
 {
-    public function handle($request, callable $next);
+    /**
+     * Handle the request
+     * @param callable $next - The next middleware in the pipeline
+     * @return mixed
+     */
+    abstract public function handle($next);
 }
 ```
 
-### Middleware Pipeline
+### Pipeline Construction Algorithm
+
+The Application class builds the middleware pipeline using `array_reduce` and **higher-order functions**:
 
 ```php
+private function createMiddlewarePipeline($middleware, $destination)
+{
+    // Build pipeline using array_reduce (functional programming approach)
+    $pipeline = array_reduce(
+        array_reverse($middleware), // Reverse to maintain correct execution order
+        function ($next, $middlewareName) {
+            // Return a closure that wraps the next middleware
+            return function () use ($middlewareName, $next) {
+                // Resolve middleware class from registry
+                $middlewareClass = $this->middlewareRegistry[$middlewareName] ?? null;
+                
+                if (!$middlewareClass) {
+                    throw new \Exception("Middleware not found: {$middlewareName}");
+                }
+                
+                // Instantiate and execute middleware
+                $middlewareInstance = new $middlewareClass();
+                return $middlewareInstance->handle($next);
+            };
+        },
+        $destination // Final destination (controller action)
+    );
+    
+    return $pipeline;
+}
+```
+
+### Execution Flow Analysis
+
+Here's how a request flows through the middleware pipeline:
+
+```php
+// Given middleware stack: ['auth', 'cors', 'throttle']
+// And controller action: UserController@index
+
+// 1. array_reverse(['auth', 'cors', 'throttle']) = ['throttle', 'cors', 'auth']
+
+// 2. array_reduce builds nested closures:
+$pipeline = function() { // auth wrapper
+    return $authMiddleware->handle(function() { // cors wrapper
+        return $corsMiddleware->handle(function() { // throttle wrapper
+            return $throttleMiddleware->handle(function() { // final destination
+                return $controller->index(); // Controller action
+            });
+        });
+    });
+};
+
+// 3. Execution order:
+// auth->handle() → cors->handle() → throttle->handle() → controller → throttle response → cors response → auth response
+```
 <?php
 
 namespace App\Core;

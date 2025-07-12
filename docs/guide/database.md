@@ -1,13 +1,13 @@
 ---
 layout: default
 title: Database
-nav_order: 7
+nav_order: 6
 ---
 
 # Database
 {: .no_toc }
 
-Complete database integration with query builder, migrations, and Eloquent-style models.
+The database layer implements the **Singleton** and **Data Access Object (DAO)** patterns to provide a clean, efficient interface for database operations using PDO.
 {: .fs-6 .fw-300 }
 
 ## Table of contents
