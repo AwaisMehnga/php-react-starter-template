@@ -1,30 +1,30 @@
+// vite.config.js
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
+import fs from 'fs';
+
+const spaDirs = fs.readdirSync(resolve(__dirname, 'modules')).filter(name =>
+  fs.existsSync(resolve(__dirname, `modules/${name}/app.jsx`))
+);
+
+const input = Object.fromEntries(
+  spaDirs.map(name => [`modules/${name}/app.jsx`, resolve(__dirname, `modules/${name}/app.jsx`)])
+);
 
 export default defineConfig({
-    plugins: [react()],
-    
-    build: {
-        rollupOptions: {
-            input: {
-                app: resolve(__dirname, 'modules/App/app.jsx'),
-                // Add more SPAs here:
-                // dashboard: resolve(__dirname, 'modules/Dashboard/app.jsx'),
-            },
-            output: {
-                entryFileNames: '[name]/main.js',
-                chunkFileNames: '[name]/chunks/[name].js',
-                assetFileNames: '[name]/[name].[ext]'
-            }
-        },
-        outDir: 'build',
-    },
-    
-    server: {
-        port: 3000,
-        proxy: {
-            '/api': 'http://localhost:8000'
-        }
+  plugins: [react()],
+  base: '/build/', // Important for correct chunk URL resolution
+  build: {
+    outDir: 'build',
+    manifest: true,
+    cssCodeSplit: true,
+    rollupOptions: { input }
+  },
+  server: {
+    port: 3000,
+    proxy: {
+      '/api': 'http://localhost:8000',
     }
+  }
 });
