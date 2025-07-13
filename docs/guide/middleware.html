@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Middleware - PHP React MVC Template</title>
+    <meta name="description" content="Authentication, CORS, and request processing middleware">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #0366d6;
+            margin-bottom: 1rem;
+        }
+        
+        h2 {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #24292e;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #e1e4e8;
+            padding-bottom: 0.3rem;
+        }
+        
+        h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #24292e;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .subtitle {
+            font-size: 1.25rem;
+            font-weight: 300;
+            color: #586069;
+            margin-bottom: 2rem;
+        }
+        
+        pre {
+            background-color: #f6f8fa;
+            border-radius: 6px;
+            padding: 16px;
+            overflow-x: auto;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.9rem;
+            line-height: 1.45;
+            border: 1px solid #e1e4e8;
+        }
+        
+        code {
+            background-color: #f3f4f6;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.9rem;
+        }
+        
+        pre code {
+            background-color: transparent;
+            padding: 0;
+        }
+        
+        ul, ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+        }
+        
+        li {
+            margin: 0.5rem 0;
+        }
+        
+        strong {
+            font-weight: 600;
+        }
+        
+        hr {
+            border: none;
+            border-top: 1px solid #e1e4e8;
+            margin: 2rem 0;
+        }
+        
+        .nav-link {
+            color: #0366d6;
+            text-decoration: none;
+        }
+        
+        .nav-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="../index.html" class="nav-link">← Back to Documentation</a>
+    </nav>
+    
+    <h1>Middleware</h1>
+    
+    <p class="subtitle">Middleware provides a convenient mechanism for filtering HTTP requests entering your application. Create authentication, CORS, rate limiting, and custom request processing.</p>
+    
+    <hr>
+    
+    <h2>How Middleware Works</h2>
+    
+    <h3>The Pipeline Pattern</h3>
+    
+    <p>Middleware implements the Pipeline pattern, where each middleware is a layer that can process, modify, or terminate the request flow:</p>
+    
+    <pre><code class="language-php">// Middleware pipeline construction
+$pipeline = array_reduce(
+    array_reverse($middleware),
+    function ($next, $middlewareName) {
+        return function () use ($middlewareName, $next) {
+            $middleware = new $middlewareName();
+            return $middleware->handle($next);
+        };
+    },
+    $destination // Final controller action
+);</code></pre>
+    
+    <hr>
+    
+    <h2>Built-in Middleware</h2>
+    
+    <h3>Authentication Middleware</h3>
+    
+    <pre><code class="language-php">&lt;?php
+
+namespace App\Middleware;
+
+class AuthMiddleware
+{
+    public function handle($next)
+    {
+        session_start();
+        
+        // Check if user is authenticated
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            
+            // API request - return JSON
+            if ($this->isApiRequest()) {
+                header('Content-Type: application/json');
+                echo json_encode(['error' => 'Unauthorized']);
+                exit;
+            }
+            
+            // Web request - redirect to login
+            header('Location: /login');
+            exit;
+        }
+        
+        // Continue to next middleware/controller
+        return $next();
+    }
+    
+    private function isApiRequest()
+    {
+        return strpos($_SERVER['REQUEST_URI'], '/api/') === 0 ||
+               isset($_SERVER['HTTP_X_REQUESTED_WITH']);
+    }
+}</code></pre>
+    
+    <h3>CORS Middleware</h3>
+    
+    <pre><code class="language-php">&lt;?php
+
+namespace App\Middleware;
+
+class CorsMiddleware
+{
+    public function handle($next)
+    {
+        // Set CORS headers
+        header('Access-Control-Allow-Origin: *');
+        header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+        header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
+        header('Access-Control-Max-Age: 86400');
+        
+        // Handle preflight OPTIONS request
+        if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+            http_response_code(200);
+            exit;
+        }
+        
+        return $next();
+    }
+}</code></pre>
+    
+    <h3>Admin Middleware</h3>
+    
+    <pre><code class="language-php">&lt;?php
+
+namespace App\Middleware;
+
+use App\Models\User;
+
+class AdminMiddleware
+{
+    public function handle($next)
+    {
+        session_start();
+        
+        if (!isset($_SESSION['user_id'])) {
+            $this->unauthorized();
+        }
+        
+        $user = User::find($_SESSION['user_id']);
+        
+        if (!$user || $user->role !== 'admin') {
+            $this->forbidden();
+        }
+        
+        return $next();
+    }
+    
+    private function unauthorized()
+    {
+        http_response_code(401);
+        echo json_encode(['error' => 'Authentication required']);
+        exit;
+    }
+    
+    private function forbidden()
+    {
+        http_response_code(403);
+        echo json_encode(['error' => 'Admin access required']);
+        exit;
+    }
+}</code></pre>
+    
+    <hr>
+    
+    <h2>Creating Custom Middleware</h2>
+    
+    <h3>Rate Limiting Middleware</h3>
+    
+    <pre><code class="language-php">&lt;?php
+
+namespace App\Middleware;
+
+class ThrottleMiddleware
+{
+    private $maxAttempts;
+    private $timeWindow;
+    
+    public function __construct($maxAttempts = 60, $timeWindow = 60)
+    {
+        $this->maxAttempts = $maxAttempts;
+        $this->timeWindow = $timeWindow;
+    }
+    
+    public function handle($next)
+    {
+        $key = $this->getThrottleKey();
+        $attempts = $this->getAttempts($key);
+        
+        if ($attempts >= $this->maxAttempts) {
+            $this->rateLimitExceeded();
+        }
+        
+        $this->incrementAttempts($key);
+        
+        return $next();
+    }
+    
+    private function getThrottleKey()
+    {
+        $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+        $route = $_SERVER['REQUEST_URI'] ?? '';
+        return md5($ip . $route);
+    }
+    
+    private function getAttempts($key)
+    {
+        $filename = sys_get_temp_dir() . "/throttle_{$key}";
+        
+        if (!file_exists($filename)) {
+            return 0;
+        }
+        
+        $data = json_decode(file_get_contents($filename), true);
+        
+        // Check if time window has expired
+        if (time() - $data['timestamp'] > $this->timeWindow) {
+            unlink($filename);
+            return 0;
+        }
+        
+        return $data['attempts'] ?? 0;
+    }
+    
+    private function incrementAttempts($key)
+    {
+        $filename = sys_get_temp_dir() . "/throttle_{$key}";
+        $attempts = $this->getAttempts($key) + 1;
+        
+        file_put_contents($filename, json_encode([
+            'attempts' => $attempts,
+            'timestamp' => time()
+        ]));
+    }
+    
+    private function rateLimitExceeded()
+    {
+        http_response_code(429);
+        header('Content-Type: application/json');
+        echo json_encode([
+            'error' => 'Rate limit exceeded',
+            'retry_after' => $this->timeWindow
+        ]);
+        exit;
+    }
+}</code></pre>
+    
+    <h3>Logging Middleware</h3>
+    
+    <pre><code class="language-php">&lt;?php
+
+namespace App\Middleware;
+
+class LoggingMiddleware
+{
+    public function handle($next)
+    {
+        $startTime = microtime(true);
+        $method = $_SERVER['REQUEST_METHOD'];
+        $uri = $_SERVER['REQUEST_URI'];
+        $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+        
+        // Execute request
+        $response = $next();
+        
+        $endTime = microtime(true);
+        $duration = round(($endTime - $startTime) * 1000, 2);
+        
+        // Log request
+        $logEntry = sprintf(
+            "[%s] %s %s %s - %sms\n",
+            date('Y-m-d H:i:s'),
+            $ip,
+            $method,
+            $uri,
+            $duration
+        );
+        
+        file_put_contents(
+            __DIR__ . '/../../logs/requests.log',
+            $logEntry,
+            FILE_APPEND | LOCK_EX
+        );
+        
+        return $response;
+    }
+}</code></pre>
+    
+    <hr>
+    
+    <h2>Applying Middleware</h2>
+    
+    <h3>Route Middleware</h3>
+    
+    <pre><code class="language-php">// Single middleware
+Route::get('/profile', [UserController::class, 'profile'])
+     ->middleware('auth');
+
+// Multiple middleware
+Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])
+     ->middleware(['auth', 'admin']);
+
+// Middleware with parameters
+Route::get('/api/data', [ApiController::class, 'data'])
+     ->middleware('throttle:100,60');</code></pre>
+    
+    <h3>Global Middleware</h3>
+    
+    <pre><code class="language-php">// Apply to all routes
+$app->middleware([
+    'cors',
+    'logging'
+]);
+
+// Apply to route groups
+Route::group(['middleware' => ['auth']], function () {
+    Route::get('/dashboard', [DashboardController::class, 'index']);
+    Route::get('/profile', [UserController::class, 'profile']);
+});</code></pre>
+    
+    <hr>
+    
+    <h2>Middleware Registration</h2>
+    
+    <h3>Register Middleware Aliases</h3>
+    
+    <pre><code class="language-php">// In Application class or bootstrap file
+$app->registerMiddleware([
+    'auth' => AuthMiddleware::class,
+    'admin' => AdminMiddleware::class,
+    'cors' => CorsMiddleware::class,
+    'throttle' => ThrottleMiddleware::class,
+    'logging' => LoggingMiddleware::class,
+]);</code></pre>
+    
+    <hr>
+    
+    <h2>Best Practices</h2>
+    
+    <h3>1. Keep Middleware Focused</h3>
+    
+    <p>Each middleware should have a single responsibility:</p>
+    
+    <pre><code class="language-php">// ✅ Good - Single responsibility
+class AuthMiddleware
+{
+    public function handle($next)
+    {
+        // Only handle authentication
+        if (!$this->isAuthenticated()) {
+            $this->unauthorized();
+        }
+        return $next();
+    }
+}
+
+// ❌ Bad - Multiple responsibilities
+class AuthAndLoggingMiddleware
+{
+    public function handle($next)
+    {
+        // Authentication AND logging - too much
+    }
+}</code></pre>
+    
+    <h3>2. Order Matters</h3>
+    
+    <p>Apply middleware in the correct order:</p>
+    
+    <pre><code class="language-php">// Correct order
+Route::get('/admin/users', [AdminController::class, 'users'])
+     ->middleware(['cors', 'auth', 'admin', 'throttle']);
+
+// CORS first (for preflight requests)
+// Auth before admin check
+// Throttle last (after authentication)</code></pre>
+    
+    <h3>3. Handle Errors Gracefully</h3>
+    
+    <pre><code class="language-php">class ValidationMiddleware
+{
+    public function handle($next)
+    {
+        try {
+            $this->validateRequest();
+            return $next();
+        } catch (ValidationException $e) {
+            return $this->errorResponse($e->getMessage(), 422);
+        } catch (Exception $e) {
+            return $this->errorResponse('Internal server error', 500);
+        }
+    }
+    
+    private function errorResponse($message, $code)
+    {
+        http_response_code($code);
+        header('Content-Type: application/json');
+        echo json_encode(['error' => $message]);
+        exit;
+    }
+}</code></pre>
+    
+    <p>Middleware provides a clean, reusable way to handle cross-cutting concerns in your application, keeping your controllers focused on business logic.</p>
+</body>
+</html>

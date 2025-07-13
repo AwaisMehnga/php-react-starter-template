@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Getting Started - PHP React MVC Template</title>
+    <meta name="description" content="Getting started guide for PHP React MVC Template">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #0366d6;
+            margin-bottom: 1rem;
+        }
+        
+        h2 {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #24292e;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #e1e4e8;
+            padding-bottom: 0.3rem;
+        }
+        
+        h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #24292e;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        h4 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #24292e;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .subtitle {
+            font-size: 1.25rem;
+            font-weight: 300;
+            color: #586069;
+            margin-bottom: 2rem;
+        }
+        
+        pre {
+            background-color: #f6f8fa;
+            border-radius: 6px;
+            padding: 16px;
+            overflow-x: auto;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.9rem;
+            line-height: 1.45;
+            border: 1px solid #e1e4e8;
+        }
+        
+        code {
+            background-color: #f3f4f6;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.9rem;
+        }
+        
+        pre code {
+            background-color: transparent;
+            padding: 0;
+        }
+        
+        ul, ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+        }
+        
+        li {
+            margin: 0.5rem 0;
+        }
+        
+        strong {
+            font-weight: 600;
+        }
+        
+        hr {
+            border: none;
+            border-top: 1px solid #e1e4e8;
+            margin: 2rem 0;
+        }
+        
+        .nav-link {
+            color: #0366d6;
+            text-decoration: none;
+        }
+        
+        .nav-link:hover {
+            text-decoration: underline;
+        }
+        
+        .toc {
+            background-color: #f8f9fa;
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .toc ul {
+            margin: 0;
+            padding-left: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="../index.html" class="nav-link">← Back to Documentation</a>
+    </nav>
+    
+    <h1>Getting Started</h1>
+    
+    <p class="subtitle">This comprehensive guide explains how the PHP React MVC Template works internally and how to develop with it effectively.</p>
+    
+    <div class="toc">
+        <h3>Table of Contents</h3>
+        <ul>
+            <li><a href="#system-architecture" class="nav-link">System Architecture Overview</a></li>
+            <li><a href="#prerequisites" class="nav-link">Prerequisites</a></li>
+            <li><a href="#installation" class="nav-link">Installation</a></li>
+            <li><a href="#project-structure" class="nav-link">Project Structure</a></li>
+            <li><a href="#development-workflow" class="nav-link">Development Workflow</a></li>
+            <li><a href="#configuration" class="nav-link">Configuration</a></li>
+            <li><a href="#next-steps" class="nav-link">Next Steps</a></li>
+            <li><a href="#troubleshooting" class="nav-link">Troubleshooting</a></li>
+        </ul>
+    </div>
+    
+    <hr>
+    
+    <h2 id="system-architecture">System Architecture Overview</h2>
+    
+    <p>This template implements a sophisticated MVC (Model-View-Controller) architecture with several design patterns:</p>
+    
+    <h3>Core Design Patterns</h3>
+    
+    <ol>
+        <li><strong>Singleton Pattern</strong>: The <code>Application</code> class uses the singleton pattern to ensure only one instance manages the entire request lifecycle.</li>
+        
+        <li><strong>Pipeline Pattern</strong>: Middleware is implemented using a pipeline pattern where each middleware is a layer that can process, modify, or terminate the request flow.</li>
+        
+        <li><strong>Registry Pattern</strong>: The Application class maintains a middleware registry that maps string identifiers to middleware classes.</li>
+        
+        <li><strong>Dependency Injection</strong>: Controllers automatically receive route parameters through PHP's Reflection API.</li>
+        
+        <li><strong>Active Record Pattern</strong>: Models provide an object-oriented interface to database records.</li>
+    </ol>
+    
+    <h3>Request Flow Architecture</h3>
+    
+    <pre><code>HTTP Request → Router → Application → Middleware Pipeline → Controller → Model → Database
+                                                         ↓
+HTTP Response ← View/JSON ← Controller ← Model ← Database</code></pre>
+    
+    <hr>
+    
+    <h2 id="prerequisites">Prerequisites</h2>
+    
+    <p>Before you begin, ensure you have the following installed:</p>
+    
+    <ul>
+        <li><strong>PHP 8.0+</strong> with extensions:
+            <ul>
+                <li>PDO</li>
+                <li>PDO_MySQL</li>
+                <li>JSON</li>
+                <li>OpenSSL</li>
+            </ul>
+        </li>
+        <li><strong>Composer</strong> for dependency management</li>
+        <li><strong>Node.js 16+</strong> and <strong>npm</strong> for React development</li>
+        <li><strong>Web Server</strong> (Apache/Nginx) or <strong>XAMPP</strong> for local development</li>
+        <li><strong>MySQL 5.7+</strong> or <strong>MariaDB</strong> for database</li>
+    </ul>
+    
+    <hr>
+    
+    <h2 id="installation">Installation</h2>
+    
+    <h3>1. Clone the Repository</h3>
+    
+    <pre><code class="language-bash"># Clone the template
+git clone https://github.com/AwaisMehnga/php-react-starter-template.git my-project
+cd my-project
+
+# Remove git history to start fresh
+rm -rf .git
+git init</code></pre>
+    
+    <h3>2. Run Interactive Setup</h3>
+    
+    <p>The template includes an interactive setup script that configures everything for you:</p>
+    
+    <pre><code class="language-bash">php setup.php</code></pre>
+    
+    <h4>Setup Process</h4>
+    
+    <p>The setup script will ask you for:</p>
+    
+    <p><strong>Project Information:</strong></p>
+    <ul>
+        <li>Project name (e.g., "My Awesome App")</li>
+        <li>Description</li>
+        <li>Author details</li>
+    </ul>
+    
+    <p><strong>Database Configuration:</strong></p>
+    <ul>
+        <li>Database name</li>
+        <li>Host (default: localhost)</li>
+        <li>Username (default: root)</li>
+        <li>Password</li>
+    </ul>
+    
+    <p><strong>React SPA Configuration:</strong></p>
+    <ul>
+        <li>Default SPA name</li>
+        <li>Application URL</li>
+    </ul>
+    
+    <h4>What the Setup Does</h4>
+    
+    <ol>
+        <li><strong>Updates project files</strong> with your configuration</li>
+        <li><strong>Configures database</strong> connection</li>
+        <li><strong>Sets up database</strong> schema with sample data</li>
+        <li><strong>Updates Composer</strong> autoloader</li>
+        <li><strong>Customizes views</strong> with your project name</li>
+    </ol>
+    
+    <h3>3. Manual Setup (Alternative)</h3>
+    
+    <p>If you prefer manual setup:</p>
+    
+    <pre><code class="language-bash"># Install PHP dependencies
+composer install
+
+# Install Node.js dependencies  
+npm install
+
+# Copy and edit configuration
+cp config/database.php.example config/database.php
+# Edit database credentials
+
+# Setup database
+php setup_database.php
+
+# Build assets
+npm run build</code></pre>
+    
+    <hr>
+    
+    <h2 id="project-structure">Project Structure</h2>
+    
+    <p>After setup, your project will have this structure:</p>
+    
+    <pre><code>my-project/
+├── app/                    # MVC Application
+│   ├── Controllers/        # HTTP Controllers
+│   ├── Models/            # Data Models
+│   ├── Middleware/        # Request Middleware
+│   └── Core/             # Framework Core Classes
+├── config/               # Configuration Files
+│   └── database.php      # Database Config
+├── database/             # Database Schema
+│   └── schema.sql        # Database Structure
+├── modules/              # React SPA Modules
+│   ├── Home/            # Example React App
+│   └── Dashboard/       # Another React App
+├── views/               # PHP Views/Templates
+│   ├── template/        # Shared Templates
+│   └── pages/          # Page Views
+├── routes/              # Route Definitions
+│   └── web.php         # Web Routes
+├── public/             # Public Assets
+├── build/              # Built Assets (Vite)
+├── vendor/             # Composer Dependencies
+├── node_modules/       # Node Dependencies
+├── docs/              # Documentation
+├── setup.php          # Setup Script
+├── router.php         # Front Controller
+├── composer.json      # PHP Dependencies
+├── package.json       # Node Dependencies
+├── vite.config.js     # Vite Configuration
+└── README.md          # Project README</code></pre>
+    
+    <hr>
+    
+    <h2 id="development-workflow">Development Workflow</h2>
+    
+    <h3>1. Start Web Server</h3>
+    
+    <p><strong>Using XAMPP:</strong></p>
+    <pre><code class="language-bash"># Start Apache and MySQL in XAMPP Control Panel
+# Access your project at: http://localhost/my-project</code></pre>
+    
+    <p><strong>Using PHP Built-in Server:</strong></p>
+    <pre><code class="language-bash">php -S localhost:8000 router.php
+# Access at: http://localhost:8000</code></pre>
+    
+    <h3>2. Develop React SPAs</h3>
+    
+    <pre><code class="language-bash"># Start Vite development server for hot reloading
+npm run dev
+
+# Build for production
+npm run build</code></pre>
+    
+    <h3>3. Test Your Application</h3>
+    
+    <p>Visit these URLs to verify everything works:</p>
+    
+    <ul>
+        <li><strong>Home Page:</strong> <code>http://localhost/my-project/</code></li>
+        <li><strong>MVC Demo:</strong> <code>http://localhost/my-project/users</code></li>
+        <li><strong>API Endpoint:</strong> <code>http://localhost/my-project/api/users/1</code></li>
+        <li><strong>Admin Area:</strong> <code>http://localhost/my-project/admin/dashboard</code></li>
+    </ul>
+    
+    <h3>4. Sample Login Credentials</h3>
+    
+    <p>The setup creates sample users you can use:</p>
+    
+    <ul>
+        <li><strong>Admin:</strong> <code>admin@yourproject.com</code> / <code>password</code></li>
+        <li><strong>User:</strong> <code>john@example.com</code> / <code>password</code></li>
+    </ul>
+    
+    <hr>
+    
+    <h2 id="configuration">Configuration</h2>
+    
+    <h3>Database Configuration</h3>
+    
+    <p>Edit <code>config/database.php</code> to customize your database connection:</p>
+    
+    <pre><code class="language-php">&lt;?php
+return [
+    'default' => 'mysql',
+    'connections' => [
+        'mysql' => [
+            'host' => 'localhost',
+            'database' => 'your_database',
+            'username' => 'your_username', 
+            'password' => 'your_password',
+            'charset' => 'utf8mb4',
+            'options' => [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            ]
+        ]
+    ]
+];</code></pre>
+    
+    <h3>Vite Configuration</h3>
+    
+    <p>Customize <code>vite.config.js</code> for your React SPAs:</p>
+    
+    <pre><code class="language-javascript">import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+export default defineConfig({
+  plugins: [react()],
+  build: {
+    rollupOptions: {
+      input: {
+        // Add your React SPAs here
+        'Home': './modules/Home/app.jsx',
+        'Dashboard': './modules/Dashboard/app.jsx',
+      }
+    }
+  }
+})</code></pre>
+    
+    <hr>
+    
+    <h2 id="next-steps">Next Steps</h2>
+    
+    <p>Now that your project is set up, explore these guides:</p>
+    
+    <ol>
+        <li><strong><a href="controllers.html" class="nav-link">Controllers</a></strong> - Learn to create MVC controllers</li>
+        <li><strong><a href="models.html" class="nav-link">Models</a></strong> - Work with database models</li>
+        <li><strong><a href="routing.html" class="nav-link">Routing</a></strong> - Define routes and middleware</li>
+        <li><strong><a href="spa-development.html" class="nav-link">React SPAs</a></strong> - Build React applications</li>
+        <li><strong><a href="database.html" class="nav-link">Database</a></strong> - Manage your database</li>
+    </ol>
+    
+    <hr>
+    
+    <h2 id="troubleshooting">Troubleshooting</h2>
+    
+    <h3>Common Issues</h3>
+    
+    <p><strong>Database Connection Failed:</strong></p>
+    <pre><code class="language-bash"># Check if MySQL is running
+# Verify credentials in config/database.php
+# Ensure database exists</code></pre>
+    
+    <p><strong>Class Not Found:</strong></p>
+    <pre><code class="language-bash"># Regenerate autoloader
+composer dump-autoload</code></pre>
+    
+    <p><strong>Vite Build Issues:</strong></p>
+    <pre><code class="language-bash"># Clear npm cache
+npm cache clean --force
+npm install</code></pre>
+    
+    <p><strong>Permission Denied:</strong></p>
+    <pre><code class="language-bash"># Set proper file permissions (Linux/Mac)
+chmod -R 755 ./</code></pre>
+    
+    <h3>Getting Help</h3>
+    
+    <ul>
+        <li><strong>Documentation:</strong> Browse the complete <a href="../index.html" class="nav-link">guide</a></li>
+        <li><strong>Issues:</strong> Report bugs on <a href="https://github.com/AwaisMehnga/php-react-starter-template/issues" class="nav-link">GitHub</a></li>
+        <li><strong>Discussions:</strong> Join <a href="https://github.com/AwaisMehnga/php-react-starter-template/discussions" class="nav-link">GitHub Discussions</a></li>
+    </ul>
+</body>
+</html>

@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controllers - PHP React MVC Template</title>
+    <meta name="description" content="Controllers handle HTTP requests and coordinate between models and views">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #0366d6;
+            margin-bottom: 1rem;
+        }
+        
+        h2 {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #24292e;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #e1e4e8;
+            padding-bottom: 0.3rem;
+        }
+        
+        h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #24292e;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        h4 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #24292e;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .subtitle {
+            font-size: 1.25rem;
+            font-weight: 300;
+            color: #586069;
+            margin-bottom: 2rem;
+        }
+        
+        pre {
+            background-color: #f6f8fa;
+            border-radius: 6px;
+            padding: 16px;
+            overflow-x: auto;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.9rem;
+            line-height: 1.45;
+            border: 1px solid #e1e4e8;
+        }
+        
+        code {
+            background-color: #f3f4f6;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.9rem;
+        }
+        
+        pre code {
+            background-color: transparent;
+            padding: 0;
+        }
+        
+        ul, ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+        }
+        
+        li {
+            margin: 0.5rem 0;
+        }
+        
+        strong {
+            font-weight: 600;
+        }
+        
+        hr {
+            border: none;
+            border-top: 1px solid #e1e4e8;
+            margin: 2rem 0;
+        }
+        
+        .nav-link {
+            color: #0366d6;
+            text-decoration: none;
+        }
+        
+        .nav-link:hover {
+            text-decoration: underline;
+        }
+        
+        .toc {
+            background-color: #f8f9fa;
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .toc ul {
+            margin: 0;
+            padding-left: 1.5rem;
+        }
+        
+        .example-box {
+            background-color: #fff5d6;
+            border: 1px solid #ffd700;
+            border-radius: 6px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .warning-box {
+            background-color: #fff5f5;
+            border: 1px solid #e53e3e;
+            border-radius: 6px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="../index.html" class="nav-link">← Back to Documentation</a>
+    </nav>
+    
+    <h1>Controllers</h1>
+    
+    <p class="subtitle">Controllers handle HTTP requests and coordinate between models and views. This guide explains how the controller system works internally and demonstrates the underlying PHP concepts.</p>
+    
+    <div class="toc">
+        <h3>Table of Contents</h3>
+        <ul>
+            <li><a href="#how-controllers-work-internally" class="nav-link">How Controllers Work Internally</a></li>
+            <li><a href="#programming-concepts-in-action" class="nav-link">Programming Concepts in Action</a></li>
+            <li><a href="#advanced-controller-concepts" class="nav-link">Advanced Controller Concepts</a></li>
+            <li><a href="#real-world-implementation-examples" class="nav-link">Real-World Implementation Examples</a></li>
+            <li><a href="#error-handling-patterns" class="nav-link">Error Handling Patterns</a></li>
+            <li><a href="#creating-controllers" class="nav-link">Creating Controllers</a></li>
+            <li><a href="#controller-methods" class="nav-link">Controller Methods</a></li>
+            <li><a href="#api-controllers" class="nav-link">API Controllers</a></li>
+            <li><a href="#advanced-features" class="nav-link">Advanced Features</a></li>
+            <li><a href="#testing-controllers" class="nav-link">Testing Controllers</a></li>
+            <li><a href="#best-practices" class="nav-link">Best Practices</a></li>
+        </ul>
+    </div>
+    
+    <hr>
+    
+    <h2 id="how-controllers-work-internally">How Controllers Work Internally</h2>
+    
+    <h3>The Controller Base Class</h3>
+    
+    <p>The base <code>Controller</code> class provides foundational methods that every controller inherits. Here's how it works:</p>
+    
+    <pre><code class="language-php">&lt;?php
+namespace App\Core;
+
+class Controller
+{
+    // View rendering uses PHP's extract() function to convert array keys to variables
+    protected function view($view, $data = [])
+    {
+        extract($data); // Converts ['user' => $userObj] to $user variable
+        $viewPath = __DIR__ . '/../../views/' . $view . '.php';
+        
+        if (file_exists($viewPath)) {
+            require $viewPath; // PHP includes and executes the view file
+        } else {
+            throw new \Exception("View not found: {$view}");
+        }
+    }
+    
+    // JSON responses use PHP's http_response_code() and header() functions
+    protected function json($data, $statusCode = 200)
+    {
+        http_response_code($statusCode);
+        header('Content-Type: application/json');
+        echo json_encode($data); // Converts PHP data to JSON string
+        exit; // Terminates script execution
+    }
+    
+    // Request data merges superglobals $_GET and $_POST
+    protected function request($key = null, $default = null)
+    {
+        $data = array_merge($_GET, $_POST); // Combines query params and form data
+        return $key === null ? $data : ($data[$key] ?? $default);
+    }
+}</code></pre>
+    
+    <h3>Parameter Injection System</h3>
+    
+    <p>The Application class uses PHP's <strong>Reflection API</strong> to automatically inject route parameters into controller methods:</p>
+    
+    <pre><code class="language-php">// In Application::callAction()
+$reflection = new \ReflectionMethod($controller, $method);
+$parameters = $reflection->getParameters();
+$args = [];
+
+foreach ($parameters as $param) {
+    $paramName = $param->getName();
+    if (isset($vars[$paramName])) {
+        $args[] = $vars[$paramName]; // Route parameter matched
+    } elseif ($param->isDefaultValueAvailable()) {
+        $args[] = $param->getDefaultValue(); // Use default value
+    } else {
+        throw new \Exception("Required parameter {$paramName} not found");
+    }
+}
+
+call_user_func_array([$controller, $method], $args);</code></pre>
+    
+    <p>This allows you to write controller methods like:</p>
+    
+    <pre><code class="language-php">public function show($id, $slug = 'default')
+{
+    // $id comes from route parameter {id}
+    // $slug comes from route parameter {slug} or uses default
+}</code></pre>
+    
+    <hr>
+    
+    <h2 id="programming-concepts-in-action">Programming Concepts in Action</h2>
+    
+    <h3>1. Method Overloading Through Magic Methods</h3>
+    
+    <p>Controllers use PHP's <code>__call()</code> magic method pattern (though not explicitly implemented here, the concept applies):</p>
+    
+    <pre><code class="language-php">class ProductController extends Controller
+{
+    // Standard CRUD methods
+    public function index() { /* List all products */ }
+    public function show($id) { /* Show single product */ }
+    public function store() { /* Create new product */ }
+    public function update($id) { /* Update existing product */ }
+    public function destroy($id) { /* Delete product */ }
+}</code></pre>
+    
+    <h3>2. Response Factory Pattern</h3>
+    
+    <p>Different response types are handled through method chaining:</p>
+    
+    <pre><code class="language-php">class ApiController extends Controller
+{
+    public function success($data, $message = 'Success')
+    {
+        return $this->json([
+            'success' => true,
+            'data' => $data,
+            'message' => $message
+        ]);
+    }
+    
+    public function error($message, $code = 400)
+    {
+        return $this->json([
+            'success' => false,
+            'error' => $message
+        ], $code);
+    }
+}</code></pre>
+    
+    <hr>
+    
+    <h2 id="creating-controllers">Creating Controllers</h2>
+    
+    <h3>Basic Controller</h3>
+    
+    <p>Create a new controller in <code>app/Controllers/</code>:</p>
+    
+    <pre><code class="language-php">&lt;?php
+
+namespace App\Controllers;
+
+use App\Core\Controller;
+
+class PostController extends Controller
+{
+    /**
+     * Display all posts
+     */
+    public function index()
+    {
+        $posts = Post::all();
+        $this->view('posts/index', ['posts' => $posts]);
+    }
+    
+    /**
+     * Show a specific post
+     */
+    public function show($id)
+    {
+        $post = Post::find($id);
+        
+        if (!$post) {
+            http_response_code(404);
+            $this->view('404');
+            return;
+        }
+        
+        $this->view('posts/show', ['post' => $post]);
+    }
+    
+    /**
+     * Create a new post
+     */
+    public function create()
+    {
+        $this->view('posts/create');
+    }
+    
+    /**
+     * Store a new post
+     */
+    public function store()
+    {
+        $data = $this->request();
+        
+        // Validate data
+        if (empty($data['title']) || empty($data['content'])) {
+            $this->json(['error' => 'Title and content are required'], 422);
+            return;
+        }
+        
+        $post = Post::create($data);
+        $this->redirect('/posts/' . $post->id);
+    }
+}</code></pre>
+    
+    <h3>Resource Controller</h3>
+    
+    <p>For full CRUD operations, create a resource controller:</p>
+    
+    <pre><code class="language-php">&lt;?php
+
+namespace App\Controllers;
+
+use App\Core\Controller;
+use App\Models\User;
+
+class UserController extends Controller
+{
+    /**
+     * Display a listing of users
+     */
+    public function index()
+    {
+        $users = User::all();
+        $this->view('users/index', compact('users'));
+    }
+
+    /**
+     * Show the form for creating a new user
+     */
+    public function create()
+    {
+        $this->view('users/create');
+    }
+
+    /**
+     * Store a newly created user
+     */
+    public function store()
+    {
+        $data = $this->request();
+        
+        // Validation
+        $errors = $this->validateUser($data);
+        if (!empty($errors)) {
+            $this->view('users/create', [
+                'errors' => $errors,
+                'old' => $data
+            ]);
+            return;
+        }
+        
+        $user = User::create($data);
+        $this->redirect('/users/' . $user->id);
+    }
+
+    /**
+     * Display the specified user
+     */
+    public function show($id)
+    {
+        $user = User::find($id);
+        
+        if (!$user) {
+            $this->abort(404);
+        }
+        
+        $this->view('users/show', compact('user'));
+    }
+}</code></pre>
+    
+    <hr>
+    
+    <h2 id="api-controllers">API Controllers</h2>
+    
+    <h3>JSON API Controller</h3>
+    
+    <p>Create dedicated API controllers for JSON responses:</p>
+    
+    <pre><code class="language-php">&lt;?php
+
+namespace App\Controllers\Api;
+
+use App\Core\Controller;
+use App\Models\Product;
+
+class ProductController extends Controller
+{
+    /**
+     * Get all products
+     */
+    public function index()
+    {
+        $products = Product::all();
+        
+        $this->json([
+            'data' => $products,
+            'total' => count($products)
+        ]);
+    }
+    
+    /**
+     * Get single product
+     */
+    public function show($id)
+    {
+        $product = Product::find($id);
+        
+        if (!$product) {
+            $this->json(['error' => 'Product not found'], 404);
+            return;
+        }
+        
+        $this->json(['data' => $product]);
+    }
+    
+    /**
+     * Create product
+     */
+    public function store()
+    {
+        $data = $this->request();
+        
+        // Validate
+        $validator = $this->validate($data, [
+            'name' => 'required|string|max:255',
+            'price' => 'required|numeric|min:0',
+            'category_id' => 'required|exists:categories,id'
+        ]);
+        
+        if ($validator->fails()) {
+            $this->json(['errors' => $validator->errors()], 422);
+            return;
+        }
+        
+        $product = Product::create($data);
+        
+        $this->json([
+            'message' => 'Product created successfully',
+            'data' => $product
+        ], 201);
+    }
+}</code></pre>
+    
+    <hr>
+    
+    <h2 id="best-practices">Best Practices</h2>
+    
+    <h3>1. Keep Controllers Thin</h3>
+    
+    <p>Move business logic to services or models:</p>
+    
+    <div class="warning-box">
+        <strong>❌ Fat controller</strong>
+        <pre><code class="language-php">class OrderController extends Controller
+{
+    public function process($id)
+    {
+        // 50+ lines of business logic
+    }
+}</code></pre>
+    </div>
+    
+    <div class="example-box">
+        <strong>✅ Thin controller</strong>
+        <pre><code class="language-php">class OrderController extends Controller
+{
+    public function process($id)
+    {
+        $order = Order::find($id);
+        $result = app(OrderService::class)->process($order);
+        
+        return $this->json($result);
+    }
+}</code></pre>
+    </div>
+    
+    <h3>2. Use Resource Controllers</h3>
+    
+    <p>Group related actions in resource controllers:</p>
+    
+    <pre><code class="language-php">Route::resource('posts', PostController::class);
+// Generates: index, create, store, show, edit, update, destroy</code></pre>
+    
+    <h3>3. Consistent Response Format</h3>
+    
+    <p>Standardize API responses:</p>
+    
+    <pre><code class="language-php">// Success response
+$this->json([
+    'success' => true,
+    'data' => $data,
+    'message' => 'Operation successful'
+]);
+
+// Error response  
+$this->json([
+    'success' => false,
+    'error' => 'Error message',
+    'code' => 'ERROR_CODE'
+], 400);</code></pre>
+    
+    <h3>4. Validate Input</h3>
+    
+    <p>Always validate user input:</p>
+    
+    <pre><code class="language-php">public function store()
+{
+    $data = $this->validate($this->request(), [
+        'name' => 'required|string|max:255',
+        'email' => 'required|email|unique:users',
+        'password' => 'required|min:8|confirmed'
+    ]);
+    
+    // Data is now validated and safe to use
+}</code></pre>
+    
+    <p>This controller system provides a clean, maintainable way to handle HTTP requests while leveraging PHP's built-in features and object-oriented programming concepts.</p>
+</body>
+</html>

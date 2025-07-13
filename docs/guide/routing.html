@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Routing - PHP React MVC Template</title>
+    <meta name="description" content="Define routes and middleware for your application">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #0366d6;
+            margin-bottom: 1rem;
+        }
+        
+        h2 {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #24292e;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #e1e4e8;
+            padding-bottom: 0.3rem;
+        }
+        
+        h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #24292e;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .subtitle {
+            font-size: 1.25rem;
+            font-weight: 300;
+            color: #586069;
+            margin-bottom: 2rem;
+        }
+        
+        pre {
+            background-color: #f6f8fa;
+            border-radius: 6px;
+            padding: 16px;
+            overflow-x: auto;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.9rem;
+            line-height: 1.45;
+            border: 1px solid #e1e4e8;
+        }
+        
+        code {
+            background-color: #f3f4f6;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.9rem;
+        }
+        
+        pre code {
+            background-color: transparent;
+            padding: 0;
+        }
+        
+        ul, ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+        }
+        
+        li {
+            margin: 0.5rem 0;
+        }
+        
+        strong {
+            font-weight: 600;
+        }
+        
+        hr {
+            border: none;
+            border-top: 1px solid #e1e4e8;
+            margin: 2rem 0;
+        }
+        
+        .nav-link {
+            color: #0366d6;
+            text-decoration: none;
+        }
+        
+        .nav-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="../index.html" class="nav-link">← Back to Documentation</a>
+    </nav>
+    
+    <h1>Routing</h1>
+    
+    <p class="subtitle">Define routes and middleware to handle HTTP requests and direct them to the appropriate controllers.</p>
+    
+    <hr>
+    
+    <h2>Basic Routing</h2>
+    
+    <h3>Simple Routes</h3>
+    
+    <p>Define routes in <code>routes/web.php</code>:</p>
+    
+    <pre><code class="language-php">&lt;?php
+
+use App\Core\Route;
+use App\Controllers\HomeController;
+use App\Controllers\UserController;
+
+// Basic GET route
+Route::get('/', [HomeController::class, 'index']);
+
+// Route with parameter
+Route::get('/users/{id}', [UserController::class, 'show']);
+
+// Multiple HTTP methods
+Route::post('/users', [UserController::class, 'store']);
+Route::put('/users/{id}', [UserController::class, 'update']);
+Route::delete('/users/{id}', [UserController::class, 'destroy']);</code></pre>
+    
+    <h3>Route Parameters</h3>
+    
+    <pre><code class="language-php">// Required parameters
+Route::get('/users/{id}', [UserController::class, 'show']);
+
+// Optional parameters
+Route::get('/posts/{id?}', [PostController::class, 'show']);
+
+// Multiple parameters
+Route::get('/users/{userId}/posts/{postId}', [PostController::class, 'show']);</code></pre>
+    
+    <hr>
+    
+    <h2>Route Groups</h2>
+    
+    <h3>Prefix Groups</h3>
+    
+    <pre><code class="language-php">// API routes with prefix
+Route::group(['prefix' => 'api'], function () {
+    Route::get('/users', [ApiController::class, 'users']);
+    Route::get('/posts', [ApiController::class, 'posts']);
+});
+
+// Admin routes
+Route::group(['prefix' => 'admin'], function () {
+    Route::get('/dashboard', [AdminController::class, 'dashboard']);
+    Route::get('/users', [AdminController::class, 'users']);
+});</code></pre>
+    
+    <h3>Middleware Groups</h3>
+    
+    <pre><code class="language-php">// Protected routes
+Route::group(['middleware' => ['auth']], function () {
+    Route::get('/profile', [UserController::class, 'profile']);
+    Route::post('/logout', [AuthController::class, 'logout']);
+});
+
+// Admin only routes
+Route::group(['middleware' => ['auth', 'admin']], function () {
+    Route::get('/admin/dashboard', [AdminController::class, 'dashboard']);
+    Route::resource('/admin/users', AdminUserController::class);
+});</code></pre>
+    
+    <hr>
+    
+    <h2>Route Middleware</h2>
+    
+    <h3>Applying Middleware</h3>
+    
+    <pre><code class="language-php">// Single middleware
+Route::get('/profile', [UserController::class, 'profile'])
+     ->middleware('auth');
+
+// Multiple middleware
+Route::get('/admin', [AdminController::class, 'index'])
+     ->middleware(['auth', 'admin']);
+
+// Middleware with parameters
+Route::get('/api/data', [ApiController::class, 'data'])
+     ->middleware('throttle:60,1');</code></pre>
+    
+    <h3>Creating Custom Middleware</h3>
+    
+    <pre><code class="language-php">&lt;?php
+
+namespace App\Middleware;
+
+class CustomMiddleware
+{
+    public function handle($next)
+    {
+        // Before request processing
+        if (!$this->checkCondition()) {
+            http_response_code(403);
+            echo json_encode(['error' => 'Access denied']);
+            exit;
+        }
+        
+        // Continue to next middleware/controller
+        $response = $next();
+        
+        // After request processing
+        // Modify response if needed
+        
+        return $response;
+    }
+    
+    private function checkCondition()
+    {
+        // Your middleware logic here
+        return true;
+    }
+}</code></pre>
+    
+    <hr>
+    
+    <h2>Resource Routes</h2>
+    
+    <h3>RESTful Resources</h3>
+    
+    <pre><code class="language-php">// Creates all RESTful routes
+Route::resource('posts', PostController::class);
+
+// Generated routes:
+// GET    /posts           - index()
+// GET    /posts/create    - create()  
+// POST   /posts           - store()
+// GET    /posts/{id}      - show()
+// GET    /posts/{id}/edit - edit()
+// PUT    /posts/{id}      - update()
+// DELETE /posts/{id}      - destroy()</code></pre>
+    
+    <h3>Partial Resources</h3>
+    
+    <pre><code class="language-php">// Only specific methods
+Route::resource('photos', PhotoController::class)
+     ->only(['index', 'show']);
+
+// Exclude specific methods
+Route::resource('photos', PhotoController::class)
+     ->except(['create', 'edit']);</code></pre>
+    
+    <hr>
+    
+    <h2>Route Caching</h2>
+    
+    <h3>Performance Optimization</h3>
+    
+    <p>For production applications, routes can be cached for better performance:</p>
+    
+    <pre><code class="language-php">// Generate route cache
+php artisan route:cache
+
+// Clear route cache
+php artisan route:clear</code></pre>
+    
+    <hr>
+    
+    <h2>Best Practices</h2>
+    
+    <h3>1. Organize Routes Logically</h3>
+    
+    <pre><code class="language-php">// Group related routes
+Route::group(['prefix' => 'api/v1', 'middleware' => 'api'], function () {
+    // User routes
+    Route::resource('users', UserController::class);
+    
+    // Post routes  
+    Route::resource('posts', PostController::class);
+    
+    // Auth routes
+    Route::post('login', [AuthController::class, 'login']);
+    Route::post('logout', [AuthController::class, 'logout']);
+});</code></pre>
+    
+    <h3>2. Use Descriptive Route Names</h3>
+    
+    <pre><code class="language-php">Route::get('/users/{id}', [UserController::class, 'show'])
+     ->name('users.show');
+
+Route::post('/users', [UserController::class, 'store'])
+     ->name('users.store');</code></pre>
+    
+    <h3>3. Validate Route Parameters</h3>
+    
+    <pre><code class="language-php">// Numeric ID validation
+Route::get('/users/{id}', [UserController::class, 'show'])
+     ->where('id', '[0-9]+');
+
+// Slug validation
+Route::get('/posts/{slug}', [PostController::class, 'show'])
+     ->where('slug', '[a-z0-9-]+');</code></pre>
+    
+    <p>This routing system provides a flexible, powerful way to organize your application's URL structure and handle HTTP requests efficiently.</p>
+</body>
+</html>

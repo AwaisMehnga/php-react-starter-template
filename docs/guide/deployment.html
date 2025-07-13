@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deployment - PHP React MVC Template</title>
+    <meta name="description" content="Production deployment and optimization guide">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #0366d6;
+            margin-bottom: 1rem;
+        }
+        
+        h2 {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #24292e;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #e1e4e8;
+            padding-bottom: 0.3rem;
+        }
+        
+        h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #24292e;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .subtitle {
+            font-size: 1.25rem;
+            font-weight: 300;
+            color: #586069;
+            margin-bottom: 2rem;
+        }
+        
+        pre {
+            background-color: #f6f8fa;
+            border-radius: 6px;
+            padding: 16px;
+            overflow-x: auto;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.9rem;
+            line-height: 1.45;
+            border: 1px solid #e1e4e8;
+        }
+        
+        code {
+            background-color: #f3f4f6;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.9rem;
+        }
+        
+        pre code {
+            background-color: transparent;
+            padding: 0;
+        }
+        
+        ul, ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+        }
+        
+        li {
+            margin: 0.5rem 0;
+        }
+        
+        strong {
+            font-weight: 600;
+        }
+        
+        hr {
+            border: none;
+            border-top: 1px solid #e1e4e8;
+            margin: 2rem 0;
+        }
+        
+        .nav-link {
+            color: #0366d6;
+            text-decoration: none;
+        }
+        
+        .nav-link:hover {
+            text-decoration: underline;
+        }
+        
+        .warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 6px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .info {
+            background-color: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 6px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="../index.html" class="nav-link">← Back to Documentation</a>
+    </nav>
+    
+    <h1>Deployment</h1>
+    
+    <p class="subtitle">Deploy your PHP React MVC application to production with performance optimization and security best practices.</p>
+    
+    <hr>
+    
+    <h2>Pre-Deployment Checklist</h2>
+    
+    <h3>Environment Configuration</h3>
+    
+    <div class="warning">
+        <strong>⚠️ Security Warning:</strong> Never commit sensitive credentials to version control. Use environment variables or separate config files.
+    </div>
+    
+    <pre><code class="language-php">// config/database.php - Production configuration
+&lt;?php
+
+return [
+    'default' => 'mysql',
+    'connections' => [
+        'mysql' => [
+            'host' => $_ENV['DB_HOST'] ?? 'localhost',
+            'database' => $_ENV['DB_DATABASE'] ?? 'production_db',
+            'username' => $_ENV['DB_USERNAME'] ?? 'db_user',
+            'password' => $_ENV['DB_PASSWORD'] ?? '',
+            'charset' => 'utf8mb4',
+            'options' => [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                PDO::ATTR_EMULATE_PREPARES => false,
+            ]
+        ]
+    ]
+];</code></pre>
+    
+    <h3>Build Assets</h3>
+    
+    <pre><code class="language-bash"># Install dependencies
+npm install --production
+
+# Build React applications for production
+npm run build
+
+# Install PHP dependencies (production only)
+composer install --no-dev --optimize-autoloader</code></pre>
+    
+    <hr>
+    
+    <h2>Server Configuration</h2>
+    
+    <h3>Apache Configuration</h3>
+    
+    <p>Create or update <code>.htaccess</code> in your project root:</p>
+    
+    <pre><code class="language-apache"># Enable URL rewriting
+RewriteEngine On
+
+# Redirect all requests to router.php
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ router.php [QSA,L]
+
+# Security headers
+Header always set X-Content-Type-Options nosniff
+Header always set X-Frame-Options DENY
+Header always set X-XSS-Protection "1; mode=block"
+Header always set Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+
+# Cache static assets
+&lt;FilesMatch "\.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$"&gt;
+    ExpiresActive On
+    ExpiresDefault "access plus 1 year"
+    Header set Cache-Control "public, immutable"
+&lt;/FilesMatch&gt;
+
+# Prevent access to sensitive files
+&lt;FilesMatch "\.(env|log|sql|md)$"&gt;
+    Require all denied
+&lt;/FilesMatch&gt;
+
+# Prevent access to vendor and config directories
+RedirectMatch 403 ^/vendor/.*$
+RedirectMatch 403 ^/config/.*$</code></pre>
+    
+    <h3>Nginx Configuration</h3>
+    
+    <pre><code class="language-nginx">server {
+    listen 80;
+    server_name yourdomain.com;
+    root /var/www/html/your-project;
+    index router.php;
+
+    # Gzip compression
+    gzip on;
+    gzip_vary on;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
+
+    # Static file caching
+    location ~* \.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # PHP handling
+    location / {
+        try_files $uri $uri/ /router.php?$query_string;
+    }
+
+    location ~ \.php$ {
+        fastcgi_pass unix:/var/run/php/php8.0-fpm.sock;
+        fastcgi_index router.php;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        include fastcgi_params;
+    }
+
+    # Security headers
+    add_header X-Content-Type-Options nosniff;
+    add_header X-Frame-Options DENY;
+    add_header X-XSS-Protection "1; mode=block";
+    add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload";
+
+    # Deny access to sensitive files
+    location ~ /\. {
+        deny all;
+    }
+    
+    location ~ /vendor/ {
+        deny all;
+    }
+    
+    location ~ /config/ {
+        deny all;
+    }
+}</code></pre>
+    
+    <hr>
+    
+    <h2>Database Optimization</h2>
+    
+    <h3>Production Database Setup</h3>
+    
+    <pre><code class="language-sql">-- Optimize MySQL for production
+SET GLOBAL innodb_buffer_pool_size = 1073741824; -- 1GB
+SET GLOBAL query_cache_size = 268435456; -- 256MB
+SET GLOBAL max_connections = 200;
+
+-- Add indexes for better performance
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_posts_user_id ON posts(user_id);
+CREATE INDEX idx_posts_status_created ON posts(status, created_at);
+
+-- Optimize table structure
+OPTIMIZE TABLE users;
+OPTIMIZE TABLE posts;
+OPTIMIZE TABLE categories;</code></pre>
+    
+    <h3>Connection Pooling</h3>
+    
+    <pre><code class="language-php">// Enhanced Database class with connection pooling
+class Database
+{
+    private static $instance = null;
+    private $connection;
+    private $config;
+    
+    private function __construct()
+    {
+        $this->config = require __DIR__ . '/../../config/database.php';
+        $this->connect();
+    }
+    
+    private function connect()
+    {
+        $config = $this->config['connections']['mysql'];
+        
+        $dsn = "mysql:host={$config['host']};dbname={$config['database']};charset={$config['charset']}";
+        
+        $options = array_merge([
+            PDO::ATTR_PERSISTENT => true, // Use persistent connections
+            PDO::MYSQL_ATTR_INIT_COMMAND => "SET sql_mode='STRICT_TRANS_TABLES'",
+        ], $config['options']);
+        
+        $this->connection = new PDO($dsn, $config['username'], $config['password'], $options);
+    }
+}</code></pre>
+    
+    <hr>
+    
+    <h2>Performance Optimization</h2>
+    
+    <h3>PHP Optimization</h3>
+    
+    <pre><code class="language-ini"># php.ini production settings
+; Disable display_errors in production
+display_errors = Off
+log_errors = On
+error_log = /var/log/php_errors.log
+
+; Enable OPcache
+opcache.enable = 1
+opcache.memory_consumption = 256
+opcache.max_accelerated_files = 20000
+opcache.validate_timestamps = 0
+
+; Session optimization
+session.save_handler = redis
+session.save_path = "tcp://127.0.0.1:6379"
+
+; Upload limits
+upload_max_filesize = 10M
+post_max_size = 10M
+max_execution_time = 30</code></pre>
+    
+    <h3>Caching Strategy</h3>
+    
+    <pre><code class="language-php">// Simple file-based caching
+class Cache
+{
+    private static $cachePath = __DIR__ . '/../../storage/cache/';
+    
+    public static function get($key)
+    {
+        $filename = self::$cachePath . md5($key) . '.cache';
+        
+        if (!file_exists($filename)) {
+            return null;
+        }
+        
+        $data = unserialize(file_get_contents($filename));
+        
+        // Check if expired
+        if ($data['expires'] < time()) {
+            unlink($filename);
+            return null;
+        }
+        
+        return $data['value'];
+    }
+    
+    public static function set($key, $value, $ttl = 3600)
+    {
+        $filename = self::$cachePath . md5($key) . '.cache';
+        
+        $data = [
+            'value' => $value,
+            'expires' => time() + $ttl
+        ];
+        
+        file_put_contents($filename, serialize($data));
+    }
+}
+
+// Usage in models
+class Post extends Model
+{
+    public static function getPopular()
+    {
+        $cacheKey = 'popular_posts';
+        $posts = Cache::get($cacheKey);
+        
+        if ($posts === null) {
+            $posts = self::where('status', 'published')
+                         ->orderBy('views', 'DESC')
+                         ->limit(10)
+                         ->get();
+            
+            Cache::set($cacheKey, $posts, 1800); // 30 minutes
+        }
+        
+        return $posts;
+    }
+}</code></pre>
+    
+    <hr>
+    
+    <h2>Monitoring and Logging</h2>
+    
+    <h3>Error Logging</h3>
+    
+    <pre><code class="language-php">// Enhanced error handling
+class ErrorHandler
+{
+    public static function register()
+    {
+        set_error_handler([self::class, 'handleError']);
+        set_exception_handler([self::class, 'handleException']);
+        register_shutdown_function([self::class, 'handleShutdown']);
+    }
+    
+    public static function handleError($severity, $message, $file, $line)
+    {
+        if (!(error_reporting() & $severity)) {
+            return false;
+        }
+        
+        $error = [
+            'type' => 'error',
+            'severity' => $severity,
+            'message' => $message,
+            'file' => $file,
+            'line' => $line,
+            'timestamp' => date('Y-m-d H:i:s')
+        ];
+        
+        self::logError($error);
+        
+        if ($severity === E_ERROR || $severity === E_USER_ERROR) {
+            self::sendErrorResponse();
+        }
+    }
+    
+    public static function handleException($exception)
+    {
+        $error = [
+            'type' => 'exception',
+            'message' => $exception->getMessage(),
+            'file' => $exception->getFile(),
+            'line' => $exception->getLine(),
+            'trace' => $exception->getTraceAsString(),
+            'timestamp' => date('Y-m-d H:i:s')
+        ];
+        
+        self::logError($error);
+        self::sendErrorResponse();
+    }
+    
+    private static function logError($error)
+    {
+        $logFile = __DIR__ . '/../../logs/errors.log';
+        $logEntry = json_encode($error) . PHP_EOL;
+        file_put_contents($logFile, $logEntry, FILE_APPEND | LOCK_EX);
+    }
+    
+    private static function sendErrorResponse()
+    {
+        http_response_code(500);
+        
+        if (self::isApiRequest()) {
+            header('Content-Type: application/json');
+            echo json_encode(['error' => 'Internal server error']);
+        } else {
+            include __DIR__ . '/../../views/errors/500.php';
+        }
+        
+        exit;
+    }
+}</code></pre>
+    
+    <hr>
+    
+    <h2>Security Hardening</h2>
+    
+    <h3>Security Headers</h3>
+    
+    <pre><code class="language-php">// Add security headers to all responses
+class SecurityHeadersMiddleware
+{
+    public function handle($next)
+    {
+        // Content Security Policy
+        header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'");
+        
+        // Prevent MIME type sniffing
+        header('X-Content-Type-Options: nosniff');
+        
+        // Prevent clickjacking
+        header('X-Frame-Options: DENY');
+        
+        // XSS protection
+        header('X-XSS-Protection: 1; mode=block');
+        
+        // HSTS (if using HTTPS)
+        if (isset($_SERVER['HTTPS'])) {
+            header('Strict-Transport-Security: max-age=63072000; includeSubDomains; preload');
+        }
+        
+        // Referrer policy
+        header('Referrer-Policy: strict-origin-when-cross-origin');
+        
+        return $next();
+    }
+}</code></pre>
+    
+    <h3>Environment Variables</h3>
+    
+    <div class="info">
+        <strong>💡 Tip:</strong> Use a <code>.env</code> file for environment-specific configuration and add it to <code>.gitignore</code>.
+    </div>
+    
+    <pre><code class="language-bash"># .env file (never commit this)
+DB_HOST=localhost
+DB_DATABASE=production_db
+DB_USERNAME=prod_user
+DB_PASSWORD=secure_password_here
+
+APP_ENV=production
+APP_DEBUG=false
+APP_KEY=base64:your-32-character-secret-key-here
+
+MAIL_HOST=smtp.mailgun.org
+MAIL_USERNAME=your-mailgun-username
+MAIL_PASSWORD=your-mailgun-password</code></pre>
+    
+    <hr>
+    
+    <h2>Deployment Scripts</h2>
+    
+    <h3>Automated Deployment</h3>
+    
+    <pre><code class="language-bash">#!/bin/bash
+# deploy.sh - Production deployment script
+
+set -e
+
+echo "Starting deployment..."
+
+# Pull latest code
+git pull origin main
+
+# Install/update dependencies
+composer install --no-dev --optimize-autoloader
+npm ci --production
+
+# Build assets
+npm run build
+
+# Run any database migrations
+php migrate.php
+
+# Clear caches
+rm -rf storage/cache/*
+
+# Restart web server (if needed)
+sudo systemctl reload apache2
+
+# Run tests
+./vendor/bin/phpunit --configuration phpunit.xml
+
+echo "Deployment completed successfully!"</code></pre>
+    
+    <hr>
+    
+    <h2>Best Practices</h2>
+    
+    <h3>1. Use HTTPS in Production</h3>
+    
+    <pre><code class="language-apache"># Force HTTPS redirect
+RewriteEngine On
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]</code></pre>
+    
+    <h3>2. Regular Backups</h3>
+    
+    <pre><code class="language-bash">#!/bin/bash
+# backup.sh - Database and files backup
+
+DATE=$(date +%Y%m%d_%H%M%S)
+BACKUP_DIR="/backups"
+
+# Database backup
+mysqldump -u $DB_USER -p$DB_PASS $DB_NAME > $BACKUP_DIR/db_backup_$DATE.sql
+
+# Files backup
+tar -czf $BACKUP_DIR/files_backup_$DATE.tar.gz /var/www/html/your-project
+
+# Clean old backups (keep last 7 days)
+find $BACKUP_DIR -name "*.sql" -mtime +7 -delete
+find $BACKUP_DIR -name "*.tar.gz" -mtime +7 -delete</code></pre>
+    
+    <h3>3. Health Monitoring</h3>
+    
+    <pre><code class="language-php">// Health check endpoint
+class HealthController extends Controller
+{
+    public function check()
+    {
+        $checks = [
+            'database' => $this->checkDatabase(),
+            'cache' => $this->checkCache(),
+            'disk_space' => $this->checkDiskSpace(),
+        ];
+        
+        $healthy = array_reduce($checks, function($carry, $check) {
+            return $carry && $check;
+        }, true);
+        
+        $status = $healthy ? 200 : 503;
+        
+        return $this->json([
+            'status' => $healthy ? 'healthy' : 'unhealthy',
+            'checks' => $checks,
+            'timestamp' => time()
+        ], $status);
+    }
+}</code></pre>
+    
+    <p>Following these deployment practices will ensure your application runs securely and efficiently in production.</p>
+</body>
+</html>

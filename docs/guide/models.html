@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Models - PHP React MVC Template</title>
+    <meta name="description" content="Models implement the Active Record pattern for database operations">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #0366d6;
+            margin-bottom: 1rem;
+        }
+        
+        h2 {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #24292e;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #e1e4e8;
+            padding-bottom: 0.3rem;
+        }
+        
+        h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #24292e;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .subtitle {
+            font-size: 1.25rem;
+            font-weight: 300;
+            color: #586069;
+            margin-bottom: 2rem;
+        }
+        
+        pre {
+            background-color: #f6f8fa;
+            border-radius: 6px;
+            padding: 16px;
+            overflow-x: auto;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.9rem;
+            line-height: 1.45;
+            border: 1px solid #e1e4e8;
+        }
+        
+        code {
+            background-color: #f3f4f6;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.9rem;
+        }
+        
+        pre code {
+            background-color: transparent;
+            padding: 0;
+        }
+        
+        ul, ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+        }
+        
+        li {
+            margin: 0.5rem 0;
+        }
+        
+        strong {
+            font-weight: 600;
+        }
+        
+        hr {
+            border: none;
+            border-top: 1px solid #e1e4e8;
+            margin: 2rem 0;
+        }
+        
+        .nav-link {
+            color: #0366d6;
+            text-decoration: none;
+        }
+        
+        .nav-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="../index.html" class="nav-link">← Back to Documentation</a>
+    </nav>
+    
+    <h1>Models</h1>
+    
+    <p class="subtitle">Models implement the <strong>Active Record</strong> pattern to provide an object-oriented interface for database operations, encapsulating both data and behavior in a single class.</p>
+    
+    <hr>
+    
+    <h2>How Models Work Internally</h2>
+    
+    <h3>The Active Record Pattern</h3>
+    
+    <p>The Model system implements the <strong>Active Record</strong> design pattern where each model instance represents a database row and provides methods to manipulate that data:</p>
+    
+    <pre><code class="language-php">&lt;?php
+namespace App\Core;
+
+class Model
+{
+    protected static $table;        // Database table name
+    protected $attributes = [];     // Object properties/data
+    protected $fillable = [];       // Mass-assignable attributes
+    
+    public function __construct($attributes = [])
+    {
+        $this->fill($attributes); // Populate model with data
+    }
+}</code></pre>
+    
+    <h3>Magic Methods for Property Access</h3>
+    
+    <p>Models use PHP's <strong>magic methods</strong> to provide elegant property access:</p>
+    
+    <pre><code class="language-php">class Model
+{
+    /**
+     * Get an attribute value using __get magic method
+     */
+    public function __get($key)
+    {
+        return isset($this->attributes[$key]) ? $this->attributes[$key] : null;
+    }
+    
+    /**
+     * Set an attribute value using __set magic method
+     */
+    public function __set($key, $value)
+    {
+        $this->attributes[$key] = $value;
+    }
+    
+    /**
+     * Check if an attribute exists using __isset magic method
+     */
+    public function __isset($key)
+    {
+        return isset($this->attributes[$key]);
+    }
+}</code></pre>
+    
+    <hr>
+    
+    <h2>Creating Models</h2>
+    
+    <h3>Basic Model</h3>
+    
+    <p>Create a new model in <code>app/Models/</code>:</p>
+    
+    <pre><code class="language-php">&lt;?php
+
+namespace App\Models;
+
+use App\Core\Model;
+
+class User extends Model
+{
+    protected static $table = 'users';
+    
+    protected $fillable = [
+        'name', 
+        'email', 
+        'password'
+    ];
+    
+    // Custom methods
+    public function posts()
+    {
+        return $this->hasMany(Post::class);
+    }
+    
+    public function isAdmin()
+    {
+        return $this->role === 'admin';
+    }
+}</code></pre>
+    
+    <h3>Model with Relationships</h3>
+    
+    <pre><code class="language-php">&lt;?php
+
+namespace App\Models;
+
+use App\Core\Model;
+
+class Post extends Model
+{
+    protected static $table = 'posts';
+    
+    protected $fillable = [
+        'title',
+        'content', 
+        'user_id',
+        'category_id'
+    ];
+    
+    // Relationships
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+    
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
+    }
+    
+    public function comments()
+    {
+        return $this->hasMany(Comment::class);
+    }
+}</code></pre>
+    
+    <hr>
+    
+    <h2>Database Operations</h2>
+    
+    <h3>Basic CRUD Operations</h3>
+    
+    <pre><code class="language-php">// Create
+$user = User::create([
+    'name' => 'John Doe',
+    'email' => 'john@example.com',
+    'password' => password_hash('secret', PASSWORD_DEFAULT)
+]);
+
+// Read
+$user = User::find(1);
+$users = User::all();
+$admins = User::where('role', 'admin')->get();
+
+// Update
+$user = User::find(1);
+$user->name = 'Jane Doe';
+$user->save();
+
+// Delete
+$user = User::find(1);
+$user->delete();</code></pre>
+    
+    <h3>Query Builder</h3>
+    
+    <pre><code class="language-php">// Complex queries
+$users = User::where('created_at', '>', '2023-01-01')
+             ->where('status', 'active')
+             ->orderBy('name')
+             ->limit(10)
+             ->get();
+
+// Raw queries
+$users = User::raw('SELECT * FROM users WHERE age > ?', [18]);</code></pre>
+    
+    <hr>
+    
+    <h2>Model Relationships</h2>
+    
+    <h3>One-to-Many</h3>
+    
+    <pre><code class="language-php">class User extends Model
+{
+    public function posts()
+    {
+        return $this->hasMany(Post::class);
+    }
+}
+
+class Post extends Model
+{
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+}
+
+// Usage
+$user = User::find(1);
+$posts = $user->posts();</code></pre>
+    
+    <h3>Many-to-Many</h3>
+    
+    <pre><code class="language-php">class User extends Model
+{
+    public function roles()
+    {
+        return $this->belongsToMany(Role::class, 'user_roles');
+    }
+}
+
+class Role extends Model
+{
+    public function users()
+    {
+        return $this->belongsToMany(User::class, 'user_roles');
+    }
+}
+
+// Usage
+$user = User::find(1);
+$roles = $user->roles();</code></pre>
+    
+    <hr>
+    
+    <h2>Best Practices</h2>
+    
+    <h3>1. Use Fillable Properties</h3>
+    
+    <p>Protect against mass assignment vulnerabilities:</p>
+    
+    <pre><code class="language-php">class User extends Model
+{
+    protected $fillable = ['name', 'email']; // Only these can be mass assigned
+    protected $guarded = ['id', 'password']; // These cannot be mass assigned
+}</code></pre>
+    
+    <h3>2. Use Mutators and Accessors</h3>
+    
+    <pre><code class="language-php">class User extends Model
+{
+    // Mutator - automatically hash passwords
+    public function setPasswordAttribute($value)
+    {
+        $this->attributes['password'] = password_hash($value, PASSWORD_DEFAULT);
+    }
+    
+    // Accessor - format names
+    public function getNameAttribute($value)
+    {
+        return ucwords($value);
+    }
+}</code></pre>
+    
+    <h3>3. Use Scopes for Reusable Queries</h3>
+    
+    <pre><code class="language-php">class User extends Model
+{
+    public function scopeActive($query)
+    {
+        return $query->where('status', 'active');
+    }
+    
+    public function scopeAdmins($query)
+    {
+        return $query->where('role', 'admin');
+    }
+}
+
+// Usage
+$activeUsers = User::active()->get();
+$activeAdmins = User::active()->admins()->get();</code></pre>
+    
+    <p>This model system provides a powerful, intuitive way to interact with your database using object-oriented PHP principles.</p>
+</body>
+</html>
