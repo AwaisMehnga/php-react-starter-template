@@ -14,7 +14,7 @@ const delayedImport = (importFunc, delay = 2000) => {
 const Awais = delayedImport(() => import('./components/awais'), 2000);
 const Afaq = delayedImport(() => import('./components/afaq'), 3000);
 import Shafaqat from './components/shafaqat';
-import Home from '../Afaq/Home';
+
 
 function App() {
     const [count, setCount] = useState(0);
@@ -39,7 +39,7 @@ function App() {
                 <Afaq />
             </Suspense>
             <Shafaqat />
-            <Home />
+    
             
         </div>
     );

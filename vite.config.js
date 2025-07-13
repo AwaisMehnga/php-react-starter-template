@@ -12,14 +12,17 @@ const input = Object.fromEntries(
   spaDirs.map(name => [`modules/${name}/app.jsx`, resolve(__dirname, `modules/${name}/app.jsx`)])
 );
 
+const isDev = true;
+
+
 export default defineConfig({
   plugins: [react()],
-  base: '/build/', // Important for correct chunk URL resolution
+  base: isDev ? '/' : '/build/',
   build: {
     outDir: 'build',
     manifest: true,
     cssCodeSplit: true,
-    rollupOptions: { input }
+    rollupOptions: { input } 
   },
   server: {
     port: 3000,

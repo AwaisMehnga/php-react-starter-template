@@ -12,12 +12,4 @@ class AppController extends Controller
             'title' => 'React App'
         ]);
     }
-    
-    public function afaq(){
-        // Placeholder for future functionality
-        return $this->view('afaq', [
-            'title' => 'FAQ Page'
-        ]);
-    }
-    
 }

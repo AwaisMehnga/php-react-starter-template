@@ -26,8 +26,10 @@ function collectAssets($manifest, $entryKey, &$js = [], &$css = [], &$visited = 
 }
 
 // ENV & Inputs
-putenv("APP_ENV=dev");
-$isDev = ($_ENV['APP_ENV'] ?? 'prod') === 'dev';
+
+$isDev = true;
+
+var_dump($isDev);
 
 $spaPath = $spa_path ?? null;
 $reactRootId = $react_root_id ?? 'react-root';
@@ -77,6 +79,13 @@ if ($isDev) {
 <div id="<?= htmlspecialchars($reactRootId) ?>"></div>
 
 <?php if ($isDev): ?>
+     <script type="module">
+        import RefreshRuntime from "http://localhost:3000/@react-refresh";
+        RefreshRuntime.injectIntoGlobalHook(window);
+        window.$RefreshReg$ = () => {};
+        window.$RefreshSig$ = () => (type) => type;
+        window.__vite_plugin_react_preamble_installed__ = true;
+    </script>
     <script type="module" src="http://localhost:3000/@vite/client"></script>
     <script type="module" src="http://localhost:3000/<?= $spaPath ?>"></script>
 <?php else: ?>

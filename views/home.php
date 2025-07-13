@@ -19,7 +19,7 @@
         <p>Your Laravel-style MVC application with React integration is ready to go.</p>
         <p>This is a placeholder homepage. You can customize it by editing <code>views/home.php</code></p>
         <div class="cta">
-            <a href="/docs" class="btn">View Documentation</a>
+            <a href="https://awaismehnga.github.io/php-react-starter-template/" class="btn">View Documentation</a>
         </div>
     </div>
 </body>
