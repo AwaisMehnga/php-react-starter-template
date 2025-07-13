@@ -165,16 +165,21 @@
             border-top: 1px solid #e1e4e8;
             margin: 2rem 0;
         }
+        
+        .action-buttons {
+            margin-bottom: 2rem;
+        }
     </style>
+    <script src="assets/sidebar.js"></script>
 </head>
 <body>
     <h1>PHP React MVC Template</h1>
     
     <p class="subtitle">A sophisticated web application framework that combines the robustness of PHP MVC architecture with the interactivity of React SPAs, implementing advanced design patterns and programming concepts.</p>
     
-    <div style="margin-bottom: 2rem;">
+    <div class="action-buttons">
         <a href="#system-architecture" class="btn btn-primary">Get started now</a>
-        <a href="https://github.com/AwaisMehnga/php-react-starter-template" class="btn">View on GitHub</a>
+        <a href="https://github.com/AwaisMehnga/php-react-starter-template" class="btn" target="_blank" rel="noopener">View on GitHub</a>
     </div>
     
     <hr>
@@ -185,7 +190,7 @@
     
     <h3>Core Design Patterns</h3>
     
-    <ul>
+    <ul id="core-patterns">
         <li><strong>MVC (Model-View-Controller)</strong>: Clean separation of concerns with dedicated layers</li>
         <li><strong>Singleton Pattern</strong>: Database connections and application instance management</li>
         <li><strong>Pipeline Pattern</strong>: Middleware system for request/response processing</li>
@@ -194,7 +199,7 @@
         <li><strong>Factory Pattern</strong>: Dynamic controller and model instantiation</li>
     </ul>
     
-    <h3>Request Processing Flow</h3>
+    <h3 id="request-flow">Request Processing Flow</h3>
     
     <pre><code>HTTP Request → Router (FastRoute) → Application → Middleware Pipeline → Controller → Model → Database
                                                                        ↓
@@ -202,9 +207,9 @@ HTTP Response ← View/JSON ← Controller ← Model ← Database Operations</co
     
     <hr>
     
-    <h2>How Each Component Works</h2>
+    <h2 id="components">How Each Component Works</h2>
     
-    <h3>1. <strong>Routing System</strong> - Request Dispatching</h3>
+    <h3 id="routing-system">1. <strong>Routing System</strong> - Request Dispatching</h3>
     
     <p>The routing system uses <strong>FastRoute</strong> library with custom middleware integration:</p>
     
@@ -226,7 +231,7 @@ $dispatcher = FastRoute\simpleDispatcher(function(RouteCollector $r) {
         <li>Middleware is applied using the <strong>Pipeline Pattern</strong></li>
     </ul>
     
-    <h3>2. <strong>Controllers</strong> - Request Handling</h3>
+    <h3 id="controllers-section">2. <strong>Controllers</strong> - Request Handling</h3>
     
     <p>Controllers use <strong>Reflection API</strong> for automatic parameter injection:</p>
     
@@ -246,7 +251,7 @@ $dispatcher = FastRoute\simpleDispatcher(function(RouteCollector $r) {
         <li><strong>Response Factory</strong>: Methods like <code>json()</code>, <code>view()</code>, <code>redirect()</code></li>
     </ul>
     
-    <h3>3. <strong>Middleware</strong> - Request Pipeline</h3>
+    <h3 id="middleware-section">3. <strong>Middleware</strong> - Request Pipeline</h3>
     
     <p>Implements the <strong>Chain of Responsibility</strong> pattern:</p>
     
@@ -272,7 +277,7 @@ $pipeline = array_reduce(
     
     <hr>
     
-    <h2>Quick Start</h2>
+    <h2 id="quick-start">Quick Start</h2>
     
     <h3>1. Clone the Template</h3>
     
@@ -298,7 +303,7 @@ cd my-project</code></pre>
     
     <hr>
     
-    <h2>Architecture Overview</h2>
+    <h2 id="architecture-overview">Architecture Overview</h2>
     
     <pre><code>📁 Project Structure
 ├── app/
@@ -321,7 +326,7 @@ cd my-project</code></pre>
     
     <hr>
     
-    <h2>Quick Examples</h2>
+    <h2 id="examples">Quick Examples</h2>
     
     <h3>Controller</h3>
     <pre><code class="language-php">&lt;?php
@@ -388,7 +393,7 @@ export default Dashboard;</code></pre>
     
     <hr>
     
-    <h2>Documentation</h2>
+    <h2 id="documentation">Documentation</h2>
     
     <div class="grid">
         <div class="grid-item">
@@ -442,6 +447,6 @@ export default Dashboard;</code></pre>
     
     <h2>License</h2>
     
-    <p>This template is open source and available under the <a href="https://github.com/AwaisMehnga/php-react-starter-template/blob/main/LICENSE">MIT License</a>.</p>
+    <p>This template is open source and available under the <a href="https://github.com/AwaisMehnga/php-react-starter-template/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>.</p>
 </body>
 </html>

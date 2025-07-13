@@ -116,21 +116,22 @@
             margin: 1rem 0;
         }
     </style>
+    <script src="../assets/sidebar.js"></script>
 </head>
 <body>
     <nav>
         <a href="../index.html" class="nav-link">← Back to Documentation</a>
     </nav>
     
-    <h1>Deployment</h1>
+    <h1 id="deployment">Deployment</h1>
     
     <p class="subtitle">Deploy your PHP React MVC application to production with performance optimization and security best practices.</p>
     
     <hr>
     
-    <h2>Pre-Deployment Checklist</h2>
+    <h2 id="pre-deployment">Pre-Deployment Checklist</h2>
     
-    <h3>Environment Configuration</h3>
+    <h3 id="environment-config">Environment Configuration</h3>
     
     <div class="warning">
         <strong>⚠️ Security Warning:</strong> Never commit sensitive credentials to version control. Use environment variables or separate config files.
@@ -157,7 +158,7 @@ return [
     ]
 ];</code></pre>
     
-    <h3>Build Assets</h3>
+    <h3 id="build-assets">Build Assets</h3>
     
     <pre><code class="language-bash"># Install dependencies
 npm install --production
@@ -170,9 +171,9 @@ composer install --no-dev --optimize-autoloader</code></pre>
     
     <hr>
     
-    <h2>Server Configuration</h2>
+    <h2 id="server-configuration">Server Configuration</h2>
     
-    <h3>Apache Configuration</h3>
+    <h3 id="apache-config">Apache Configuration</h3>
     
     <p>Create or update <code>.htaccess</code> in your project root:</p>
     
@@ -206,7 +207,7 @@ Header always set Strict-Transport-Security "max-age=63072000; includeSubDomains
 RedirectMatch 403 ^/vendor/.*$
 RedirectMatch 403 ^/config/.*$</code></pre>
     
-    <h3>Nginx Configuration</h3>
+    <h3 id="nginx-config">Nginx Configuration</h3>
     
     <pre><code class="language-nginx">server {
     listen 80;
@@ -259,9 +260,9 @@ RedirectMatch 403 ^/config/.*$</code></pre>
     
     <hr>
     
-    <h2>Database Optimization</h2>
+    <h2 id="database-optimization">Database Optimization</h2>
     
-    <h3>Production Database Setup</h3>
+    <h3 id="production-database">Production Database Setup</h3>
     
     <pre><code class="language-sql">-- Optimize MySQL for production
 SET GLOBAL innodb_buffer_pool_size = 1073741824; -- 1GB
@@ -278,7 +279,7 @@ OPTIMIZE TABLE users;
 OPTIMIZE TABLE posts;
 OPTIMIZE TABLE categories;</code></pre>
     
-    <h3>Connection Pooling</h3>
+    <h3 id="connection-pooling">Connection Pooling</h3>
     
     <pre><code class="language-php">// Enhanced Database class with connection pooling
 class Database
@@ -310,9 +311,9 @@ class Database
     
     <hr>
     
-    <h2>Performance Optimization</h2>
+    <h2 id="performance-optimization">Performance Optimization</h2>
     
-    <h3>PHP Optimization</h3>
+    <h3 id="php-optimization">PHP Optimization</h3>
     
     <pre><code class="language-ini"># php.ini production settings
 ; Disable display_errors in production
@@ -335,7 +336,7 @@ upload_max_filesize = 10M
 post_max_size = 10M
 max_execution_time = 30</code></pre>
     
-    <h3>Caching Strategy</h3>
+    <h3 id="caching-strategy">Caching Strategy</h3>
     
     <pre><code class="language-php">// Simple file-based caching
 class Cache
@@ -397,9 +398,9 @@ class Post extends Model
     
     <hr>
     
-    <h2>Monitoring and Logging</h2>
+    <h2 id="monitoring-logging">Monitoring and Logging</h2>
     
-    <h3>Error Logging</h3>
+    <h3 id="error-logging">Error Logging</h3>
     
     <pre><code class="language-php">// Enhanced error handling
 class ErrorHandler
@@ -472,7 +473,7 @@ class ErrorHandler
     
     <hr>
     
-    <h2>Security Hardening</h2>
+    <h2 id="security-hardening">Security Hardening</h2>
     
     <h3>Security Headers</h3>
     

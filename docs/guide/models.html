@@ -100,21 +100,22 @@
             text-decoration: underline;
         }
     </style>
+    <script src="../assets/sidebar.js"></script>
 </head>
 <body>
     <nav>
         <a href="../index.html" class="nav-link">← Back to Documentation</a>
     </nav>
     
-    <h1>Models</h1>
+    <h1 id="models">Models</h1>
     
     <p class="subtitle">Models implement the <strong>Active Record</strong> pattern to provide an object-oriented interface for database operations, encapsulating both data and behavior in a single class.</p>
     
     <hr>
     
-    <h2>How Models Work Internally</h2>
+    <h2 id="how-models-work">How Models Work Internally</h2>
     
-    <h3>The Active Record Pattern</h3>
+    <h3 id="active-record-pattern">The Active Record Pattern</h3>
     
     <p>The Model system implements the <strong>Active Record</strong> design pattern where each model instance represents a database row and provides methods to manipulate that data:</p>
     
@@ -133,7 +134,7 @@ class Model
     }
 }</code></pre>
     
-    <h3>Magic Methods for Property Access</h3>
+    <h3 id="magic-methods">Magic Methods for Property Access</h3>
     
     <p>Models use PHP's <strong>magic methods</strong> to provide elegant property access:</p>
     
@@ -166,9 +167,9 @@ class Model
     
     <hr>
     
-    <h2>Creating Models</h2>
+    <h2 id="creating-models">Creating Models</h2>
     
-    <h3>Basic Model</h3>
+    <h3 id="basic-model">Basic Model</h3>
     
     <p>Create a new model in <code>app/Models/</code>:</p>
     
@@ -200,7 +201,7 @@ class User extends Model
     }
 }</code></pre>
     
-    <h3>Model with Relationships</h3>
+    <h3 id="model-relationships">Model with Relationships</h3>
     
     <pre><code class="language-php">&lt;?php
 
@@ -238,9 +239,9 @@ class Post extends Model
     
     <hr>
     
-    <h2>Database Operations</h2>
+    <h2 id="database-operations">Database Operations</h2>
     
-    <h3>Basic CRUD Operations</h3>
+    <h3 id="crud-operations">Basic CRUD Operations</h3>
     
     <pre><code class="language-php">// Create
 $user = User::create([
@@ -263,7 +264,7 @@ $user->save();
 $user = User::find(1);
 $user->delete();</code></pre>
     
-    <h3>Query Builder</h3>
+    <h3 id="query-builder">Query Builder</h3>
     
     <pre><code class="language-php">// Complex queries
 $users = User::where('created_at', '>', '2023-01-01')
@@ -277,9 +278,9 @@ $users = User::raw('SELECT * FROM users WHERE age > ?', [18]);</code></pre>
     
     <hr>
     
-    <h2>Model Relationships</h2>
+    <h2 id="relationships">Model Relationships</h2>
     
-    <h3>One-to-Many</h3>
+    <h3 id="one-to-many">One-to-Many</h3>
     
     <pre><code class="language-php">class User extends Model
 {
@@ -301,7 +302,7 @@ class Post extends Model
 $user = User::find(1);
 $posts = $user->posts();</code></pre>
     
-    <h3>Many-to-Many</h3>
+    <h3 id="many-to-many">Many-to-Many</h3>
     
     <pre><code class="language-php">class User extends Model
 {
@@ -325,7 +326,7 @@ $roles = $user->roles();</code></pre>
     
     <hr>
     
-    <h2>Best Practices</h2>
+    <h2 id="best-practices">Best Practices</h2>
     
     <h3>1. Use Fillable Properties</h3>
     

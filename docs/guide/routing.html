@@ -100,21 +100,22 @@
             text-decoration: underline;
         }
     </style>
+    <script src="../assets/sidebar.js"></script>
 </head>
 <body>
     <nav>
         <a href="../index.html" class="nav-link">← Back to Documentation</a>
     </nav>
     
-    <h1>Routing</h1>
+    <h1 id="routing">Routing</h1>
     
     <p class="subtitle">Define routes and middleware to handle HTTP requests and direct them to the appropriate controllers.</p>
     
     <hr>
     
-    <h2>Basic Routing</h2>
+    <h2 id="basic-routing">Basic Routing</h2>
     
-    <h3>Simple Routes</h3>
+    <h3 id="simple-routes">Simple Routes</h3>
     
     <p>Define routes in <code>routes/web.php</code>:</p>
     
@@ -135,7 +136,7 @@ Route::post('/users', [UserController::class, 'store']);
 Route::put('/users/{id}', [UserController::class, 'update']);
 Route::delete('/users/{id}', [UserController::class, 'destroy']);</code></pre>
     
-    <h3>Route Parameters</h3>
+    <h3 id="route-parameters">Route Parameters</h3>
     
     <pre><code class="language-php">// Required parameters
 Route::get('/users/{id}', [UserController::class, 'show']);
@@ -148,9 +149,9 @@ Route::get('/users/{userId}/posts/{postId}', [PostController::class, 'show']);</
     
     <hr>
     
-    <h2>Route Groups</h2>
+    <h2 id="route-groups">Route Groups</h2>
     
-    <h3>Prefix Groups</h3>
+    <h3 id="prefix-groups">Prefix Groups</h3>
     
     <pre><code class="language-php">// API routes with prefix
 Route::group(['prefix' => 'api'], function () {
@@ -164,7 +165,7 @@ Route::group(['prefix' => 'admin'], function () {
     Route::get('/users', [AdminController::class, 'users']);
 });</code></pre>
     
-    <h3>Middleware Groups</h3>
+    <h3 id="middleware-groups">Middleware Groups</h3>
     
     <pre><code class="language-php">// Protected routes
 Route::group(['middleware' => ['auth']], function () {
@@ -180,9 +181,9 @@ Route::group(['middleware' => ['auth', 'admin']], function () {
     
     <hr>
     
-    <h2>Route Middleware</h2>
+    <h2 id="route-middleware">Route Middleware</h2>
     
-    <h3>Applying Middleware</h3>
+    <h3 id="applying-middleware">Applying Middleware</h3>
     
     <pre><code class="language-php">// Single middleware
 Route::get('/profile', [UserController::class, 'profile'])
@@ -196,7 +197,7 @@ Route::get('/admin', [AdminController::class, 'index'])
 Route::get('/api/data', [ApiController::class, 'data'])
      ->middleware('throttle:60,1');</code></pre>
     
-    <h3>Creating Custom Middleware</h3>
+    <h3 id="custom-middleware">Creating Custom Middleware</h3>
     
     <pre><code class="language-php">&lt;?php
 
@@ -231,9 +232,9 @@ class CustomMiddleware
     
     <hr>
     
-    <h2>Resource Routes</h2>
+    <h2 id="resource-routes">Resource Routes</h2>
     
-    <h3>RESTful Resources</h3>
+    <h3 id="restful-resources">RESTful Resources</h3>
     
     <pre><code class="language-php">// Creates all RESTful routes
 Route::resource('posts', PostController::class);
@@ -247,7 +248,7 @@ Route::resource('posts', PostController::class);
 // PUT    /posts/{id}      - update()
 // DELETE /posts/{id}      - destroy()</code></pre>
     
-    <h3>Partial Resources</h3>
+    <h3 id="partial-resources">Partial Resources</h3>
     
     <pre><code class="language-php">// Only specific methods
 Route::resource('photos', PhotoController::class)
@@ -259,9 +260,9 @@ Route::resource('photos', PhotoController::class)
     
     <hr>
     
-    <h2>Route Caching</h2>
+    <h2 id="route-caching">Route Caching</h2>
     
-    <h3>Performance Optimization</h3>
+    <h3 id="performance-optimization">Performance Optimization</h3>
     
     <p>For production applications, routes can be cached for better performance:</p>
     
@@ -273,7 +274,7 @@ php artisan route:clear</code></pre>
     
     <hr>
     
-    <h2>Best Practices</h2>
+    <h2 id="best-practices">Best Practices</h2>
     
     <h3>1. Organize Routes Logically</h3>
     

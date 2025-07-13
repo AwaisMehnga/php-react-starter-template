@@ -100,21 +100,22 @@
             text-decoration: underline;
         }
     </style>
+    <script src="../assets/sidebar.js"></script>
 </head>
 <body>
     <nav>
         <a href="../index.html" class="nav-link">← Back to Documentation</a>
     </nav>
     
-    <h1>Middleware</h1>
+    <h1 id="middleware">Middleware</h1>
     
     <p class="subtitle">Middleware provides a convenient mechanism for filtering HTTP requests entering your application. Create authentication, CORS, rate limiting, and custom request processing.</p>
     
     <hr>
     
-    <h2>How Middleware Works</h2>
+    <h2 id="how-middleware-works">How Middleware Works</h2>
     
-    <h3>The Pipeline Pattern</h3>
+    <h3 id="pipeline-pattern">The Pipeline Pattern</h3>
     
     <p>Middleware implements the Pipeline pattern, where each middleware is a layer that can process, modify, or terminate the request flow:</p>
     
@@ -132,9 +133,9 @@ $pipeline = array_reduce(
     
     <hr>
     
-    <h2>Built-in Middleware</h2>
+    <h2 id="builtin-middleware">Built-in Middleware</h2>
     
-    <h3>Authentication Middleware</h3>
+    <h3 id="auth-middleware">Authentication Middleware</h3>
     
     <pre><code class="language-php">&lt;?php
 
@@ -173,7 +174,7 @@ class AuthMiddleware
     }
 }</code></pre>
     
-    <h3>CORS Middleware</h3>
+    <h3 id="cors-middleware">CORS Middleware</h3>
     
     <pre><code class="language-php">&lt;?php
 
@@ -199,7 +200,7 @@ class CorsMiddleware
     }
 }</code></pre>
     
-    <h3>Admin Middleware</h3>
+    <h3 id="admin-middleware">Admin Middleware</h3>
     
     <pre><code class="language-php">&lt;?php
 
@@ -243,9 +244,9 @@ class AdminMiddleware
     
     <hr>
     
-    <h2>Creating Custom Middleware</h2>
+    <h2 id="custom-middleware">Creating Custom Middleware</h2>
     
-    <h3>Rate Limiting Middleware</h3>
+    <h3 id="rate-limiting">Rate Limiting Middleware</h3>
     
     <pre><code class="language-php">&lt;?php
 
@@ -325,7 +326,7 @@ class ThrottleMiddleware
     }
 }</code></pre>
     
-    <h3>Logging Middleware</h3>
+    <h3 id="logging-middleware">Logging Middleware</h3>
     
     <pre><code class="language-php">&lt;?php
 
@@ -368,9 +369,9 @@ class LoggingMiddleware
     
     <hr>
     
-    <h2>Applying Middleware</h2>
+    <h2 id="applying-middleware">Applying Middleware</h2>
     
-    <h3>Route Middleware</h3>
+    <h3 id="route-middleware">Route Middleware</h3>
     
     <pre><code class="language-php">// Single middleware
 Route::get('/profile', [UserController::class, 'profile'])
@@ -384,7 +385,7 @@ Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])
 Route::get('/api/data', [ApiController::class, 'data'])
      ->middleware('throttle:100,60');</code></pre>
     
-    <h3>Global Middleware</h3>
+    <h3 id="global-middleware">Global Middleware</h3>
     
     <pre><code class="language-php">// Apply to all routes
 $app->middleware([
@@ -400,9 +401,9 @@ Route::group(['middleware' => ['auth']], function () {
     
     <hr>
     
-    <h2>Middleware Registration</h2>
+    <h2 id="middleware-registration">Middleware Registration</h2>
     
-    <h3>Register Middleware Aliases</h3>
+    <h3 id="middleware-aliases">Register Middleware Aliases</h3>
     
     <pre><code class="language-php">// In Application class or bootstrap file
 $app->registerMiddleware([
@@ -415,7 +416,7 @@ $app->registerMiddleware([
     
     <hr>
     
-    <h2>Best Practices</h2>
+    <h2 id="best-practices">Best Practices</h2>
     
     <h3>1. Keep Middleware Focused</h3>
     
