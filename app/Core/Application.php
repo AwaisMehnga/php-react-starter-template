@@ -39,6 +39,9 @@ class Application
      */
     public function handleRoute($routeInfo, $vars = [])
     {
+        // Ensure session is started
+        Session::start();
+        
         $routeData = $routeInfo[1];
         $action = $routeData['action'];
         $middleware = $routeData['middleware'] ?? [];

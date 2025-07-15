@@ -8,202 +8,90 @@ use App\Core\Database;
 class User extends Model
 {
     protected static $table = 'users';
-    protected static $primaryKey = 'id';
-    
-    protected $fillable = [
-        'name', 'email', 'password', 'role', 'phone', 'bio', 'avatar', 'is_active'
-    ];
+    protected $fillable = ['name', 'email', 'password'];
+    protected $hidden = ['password', 'remember_token'];
 
     /**
-     * Get all users from database
-     *
-     * @return array
+     * Create a new user
      */
-    public static function all()
-    {
-        $db = Database::getInstance();
-        $results = $db->fetchAll("SELECT * FROM " . static::$table . " WHERE is_active = 1 ORDER BY created_at DESC");
-        
-        return array_map(function($row) {
-            return new static($row);
-        }, $results);
-    }
-
-    /**
-     * Find user by ID from database
-     *
-     * @param int $id
-     * @return static|null
-     */
-    public static function find($id)
-    {
-        $db = Database::getInstance();
-        $result = $db->fetch("SELECT * FROM " . static::$table . " WHERE id = ?", [$id]);
-        return $result ? new static($result) : null;
-    }
-
-    /**
-     * Find user by email
-     *
-     * @param string $email
-     * @return static|null
-     */
-    public static function findByEmail($email)
-    {
-        $db = Database::getInstance();
-        $result = $db->fetch("SELECT * FROM " . static::$table . " WHERE email = ?", [$email]);
-        return $result ? new static($result) : null;
-    }
-
-    /**
-     * Create new user in database
-     *
-     * @param array $attributes
-     * @return static
-     */
-    public static function create($attributes = [])
+    public static function create($data = [])
     {
         $db = Database::getInstance();
         
         // Hash password if provided
-        if (isset($attributes['password'])) {
-            $attributes['password'] = password_hash($attributes['password'], PASSWORD_DEFAULT);
+        if (isset($data['password'])) {
+            $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
         }
         
-        $fields = implode(', ', array_keys($attributes));
-        $placeholders = ':' . implode(', :', array_keys($attributes));
+        $sql = "INSERT INTO users (name, email, password, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())";
+        $db->query($sql, [$data['name'], $data['email'], $data['password']]);
         
-        $sql = "INSERT INTO " . static::$table . " ({$fields}) VALUES ({$placeholders})";
-        $db->query($sql, $attributes);
-        
-        $id = $db->lastInsertId();
-        return static::find($id);
+        return self::find($db->lastInsertId());
     }
 
     /**
-     * Save model to database
-     *
-     * @return $this
+     * Find user by email
      */
-    public function save()
+    public static function findByEmail($email)
     {
         $db = Database::getInstance();
-        
-        if (isset($this->attributes['id'])) {
-            // Update existing record
-            $sets = [];
-            $values = [];
-            foreach ($this->fillable as $field) {
-                if (isset($this->attributes[$field])) {
-                    $sets[] = "{$field} = ?";
-                    $values[] = $this->attributes[$field];
-                }
-            }
-            $values[] = $this->attributes['id'];
-            
-            $sql = "UPDATE " . static::$table . " SET " . implode(', ', $sets) . ", updated_at = NOW() WHERE id = ?";
-            $db->query($sql, $values);
-        } else {
-            // Create new record
-            $data = [];
-            foreach ($this->fillable as $field) {
-                if (isset($this->attributes[$field])) {
-                    $data[$field] = $this->attributes[$field];
-                }
-            }
-            $created = static::create($data);
-            $this->attributes = $created->attributes;
-        }
-        
-        return $this;
+        $sql = "SELECT * FROM users WHERE email = ?";
+        return $db->fetch($sql, [$email]);
     }
 
     /**
-     * Delete user from database
-     *
-     * @return bool
+     * Find user by ID
      */
-    public function delete()
+    public static function find($id)
     {
-        if (isset($this->attributes['id'])) {
-            $db = Database::getInstance();
-            $db->query("DELETE FROM " . static::$table . " WHERE id = ?", [$this->attributes['id']]);
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Get user's full name
-     *
-     * @return string
-     */
-    public function getFullName()
-    {
-        return $this->getAttribute('name');
-    }
-
-    /**
-     * Check if user is admin
-     *
-     * @return bool
-     */
-    public function isAdmin()
-    {
-        return $this->getAttribute('role') === 'admin';
-    }
-
-    /**
-     * Check if user is moderator or admin
-     *
-     * @return bool
-     */
-    public function isModerator()
-    {
-        return in_array($this->getAttribute('role'), ['admin', 'moderator']);
-    }
-
-    /**
-     * Get avatar URL
-     *
-     * @return string
-     */
-    public function getAvatarUrl()
-    {
-        $avatar = $this->getAttribute('avatar');
-        return $avatar ? "/uploads/avatars/{$avatar}" : "/assets/images/default-avatar.png";
+        $db = Database::getInstance();
+        $sql = "SELECT * FROM users WHERE id = ?";
+        return $db->fetch($sql, [$id]);
     }
 
     /**
      * Verify password
-     *
-     * @param string $password
-     * @return bool
      */
-    public function verifyPassword($password)
+    public static function verifyPassword($password, $hash)
     {
-        return password_verify($password, $this->getAttribute('password'));
+        return password_verify($password, $hash);
     }
 
     /**
-     * Update last login timestamp
-     *
-     * @return void
+     * Update user's remember token
      */
-    public function updateLastLogin()
+    public static function updateRememberToken($userId, $token)
     {
         $db = Database::getInstance();
-        $db->query("UPDATE " . static::$table . " SET last_login_at = NOW() WHERE id = ?", [$this->getAttribute('id')]);
+        $sql = "UPDATE users SET remember_token = ?, updated_at = NOW() WHERE id = ?";
+        return $db->query($sql, [$token, $userId]);
     }
 
     /**
-     * Get attribute value with fallback
-     *
-     * @param string $key
-     * @return mixed
+     * Find user by remember token
      */
-    private function getAttribute($key)
+    public static function findByRememberToken($token)
     {
-        return isset($this->attributes[$key]) ? $this->attributes[$key] : null;
+        $db = Database::getInstance();
+        $sql = "SELECT * FROM users WHERE remember_token = ?";
+        return $db->fetch($sql, [$token]);
+    }
+
+    /**
+     * Update email verification
+     */
+    public static function markEmailAsVerified($userId)
+    {
+        $db = Database::getInstance();
+        $sql = "UPDATE users SET email_verified_at = NOW(), updated_at = NOW() WHERE id = ?";
+        return $db->query($sql, [$userId]);
+    }
+
+    /**
+     * Check if email is verified
+     */
+    public function isEmailVerified()
+    {
+        return !is_null($this->email_verified_at);
     }
 }

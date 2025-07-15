@@ -56,6 +56,40 @@ class Controller
     }
 
     /**
+     * Redirect back to previous page with optional flash data
+     *
+     * @param array $flashData
+     * @param int $statusCode
+     * @return void
+     */
+    protected function redirectBack($flashData = [], $statusCode = 302)
+    {
+        // Store flash data in session using Session helper
+        foreach ($flashData as $key => $value) {
+            Session::flash($key, $value);
+        }
+
+        // Get previous URL from HTTP_REFERER or fallback to home
+        $previousUrl = $_SERVER['HTTP_REFERER'] ?? '/';
+        
+        http_response_code($statusCode);
+        header("Location: {$previousUrl}");
+        exit;
+    }
+
+    /**
+     * Get flash data from session
+     *
+     * @param string $key
+     * @param mixed $default
+     * @return mixed
+     */
+    protected function getFlash($key, $default = null)
+    {
+        return Session::getFlash($key, $default);
+    }
+
+    /**
      * Get request data
      *
      * @param string|null $key

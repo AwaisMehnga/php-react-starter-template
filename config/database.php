@@ -8,7 +8,7 @@ return [
             'driver' => 'mysql',
             'host' => 'localhost',
             'port' => '3306',
-            'database' => 'tool_site_db',
+            'database' => 'billo-craft',
             'username' => 'root',
             'password' => '', // Default XAMPP password is empty
             'charset' => 'utf8mb4',
