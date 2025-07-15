@@ -9,7 +9,7 @@ $app = Application::getInstance();
 
 // Register middleware
 $app->registerMiddleware('auth', \App\Middleware\AuthMiddleware::class);
-$app->registerMiddleware('admin', \App\Middleware\AdminMiddleware::class);
+$app->registerMiddleware('guest', \App\Middleware\GuestMiddleware::class);
 $app->registerMiddleware('cors', \App\Middleware\CorsMiddleware::class);
 
 $dispatcher = require __DIR__ . '/routes.php';

@@ -7,8 +7,8 @@
             "App\\": "app/"
         }
     },
-    "name": "your-username/php-react-starter-template",
-    "description": "Laravel-style MVC framework with React SPA integration",
+    "name": "awais-mehnga/billo-craft",
+    "description": "Personalized POS and Invoice Generator",
     "keywords": [
         "php",
         "mvc",
@@ -17,5 +17,11 @@
         "template",
         "laravel-style"
     ],
-    "homepage": "https://github.com/your-username/php-react-starter-template"
+    "homepage": "https://github.com/your-username/php-react-starter-template",
+    "authors": [
+        {
+            "name": "Awais Mehnga",
+            "email": "awaismehngaa@gmail.com"
+        }
+    ]
 }
